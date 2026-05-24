@@ -1,7 +1,3 @@
-# Dados brutos do hackathon (nao commitar massa de dados sensivel)
-_inbox/*
-!_inbox/.gitkeep
-
 # Env / secrets
 .env
 .env.*

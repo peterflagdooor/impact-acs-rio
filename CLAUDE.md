@@ -5,18 +5,59 @@ Tema: **saude ou seguranca**. Formato: dataset entregue no evento, solucao const
 
 ## Regras do repo
 
-- **`_inbox/`** — todos os documentos e dados brutos recebidos no evento entram aqui primeiro, sem renomear nem reorganizar. Nada de `_inbox/` vai pro git (ver `.gitignore`).
+- **`_inbox/`** — documentos e dados brutos do evento (transcricoes, briefings, datasets em `_inbox/data/`). **Vai pro git** (sincronizado entre o time). Manter conteudo bruto sem renomear; versoes processadas vao para `scripts/` ou `src/`.
+- **`_refs/`** — repos externos de referencia, clonados como subrepos independentes (cada um com seu `.git/`). **ZONA READ-ONLY** (ver regra abaixo). **NAO vai pro git** deste repo — cada pessoa do time clona localmente (ver "Setup / onboarding" abaixo).
 - **`src/`** — codigo da solucao.
 - **`scripts/`** — scripts de exploracao, ETL, one-shots.
 - **`notes/`** — anotacoes livres do Peter durante o evento.
 - **`docs/`** — documentacao final / writeup / apresentacao.
+- **`.venv/`** — virtualenv Python local. Gitignored.
+
+### `_refs/` — zona read-only (regra dura)
+
+Os repos clonados em `_refs/` sao nossa base de dados/referencia preservada para mineracao. **NUNCA modificar nada dentro de `_refs/`**:
+
+- Nao editar, renomear, mover ou deletar arquivos em `_refs/**`.
+- Nao rodar `git commit`, `git checkout`, `git reset`, `git pull` ou qualquer outra operacao git em `_refs/**` sem instrucao explicita do Peter.
+- Nao criar arquivos novos dentro de `_refs/**` (nem caches, nem outputs).
+- Leitura, grep, copia para fora (`_inbox/`, `src/`, `scripts/`, `notes/`) — tudo liberado.
+- Se um script Python ou ETL precisar processar dados de `_refs/`, ler de la e escrever o resultado fora. Nunca escrever de volta em `_refs/`.
+
+Repos atualmente em `_refs/`:
+- `claude-impact-lab-rio/` — instrucoes gerais do hackathon (taicor-ai)
+- `claude-impact-lab-saude/` — dataset do projeto de saude (prefeitura-rio), tema central do grupo
+
+## Setup / onboarding (para novos membros do time)
+
+Depois de `git clone` deste repo, rodar:
+
+```bash
+# 1. Clonar os repos de referencia em _refs/ (read-only, nao vao pro git deste repo)
+mkdir -p _refs && cd _refs
+git clone https://github.com/taicor-ai/claude-impact-lab-rio.git
+git clone https://github.com/prefeitura-rio/claude-impact-lab-saude.git
+cd ..
+
+# 2. Criar virtualenv Python e instalar dependencias
+python3 -m venv .venv
+source .venv/bin/activate            # Windows: .venv\Scripts\activate
+pip install --upgrade pip
+pip install -r requirements.txt
+```
+
+Os datasets em formato Parquet ja vem comitados em `_inbox/data/` (sao anonimizados). Se quiser baixar dos links originais do Google Drive, ver `_refs/claude-impact-lab-saude/README.md`.
+
+### Atualizar os repos de referencia
+
+```bash
+cd _refs/claude-impact-lab-rio && git pull && cd ../..
+cd _refs/claude-impact-lab-saude && git pull && cd ../..
+```
+
+Rodar isso so se o organizador anunciar update. Esses repos nao vao mudar mais durante o evento.
 
 ## Fluxo de trabalho
 
 - Hackathon = timebox curto. Priorizar **brainstorming** antes de codar e **plans** antes de implementacoes nao-triviais.
 - Usar **skills do superpowers** pesado: `brainstorming`, `writing-plans`, `executing-plans`, `test-driven-development`, `dispatching-parallel-agents`, `systematic-debugging`.
 - Antes de declarar algo "pronto", rodar verificacao real (skill `verification-before-completion`). Sem alegacoes de sucesso sem evidencia.
-
-## Stack
-
-A definir quando o problema for revelado. Default provavel: Python pra analise/ETL, e o que fizer sentido pra UI/entrega.
