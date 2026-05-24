@@ -4,11 +4,12 @@ import { PatientCard } from '@/components/patient-card';
 
 export const dynamic = 'force-dynamic';
 
+// Faixas alinhadas com scoreToPriority (lib/api.ts) na escala 0-250 da Fase 2.
 const FILTROS = [
-  { score_min: 70, label: 'Urgente (70+)', count_label: 'Score ≥ 70', color: 'bg-[var(--priority-1)]/10 text-[#9b1c28] border-[var(--priority-1)]' },
-  { score_min: 50, label: 'Alto (50+)',    count_label: 'Score ≥ 50', color: 'bg-[var(--priority-2)]/10 text-[#8d4a0c] border-[var(--priority-2)]' },
-  { score_min: 30, label: 'Médio (30+)',   count_label: 'Score ≥ 30', color: 'bg-[var(--priority-3)]/15 text-[#856404] border-[var(--priority-3)]' },
-  { score_min: 0,  label: 'Todos',         count_label: 'Todos pacientes', color: 'bg-grey-card text-grey-text border-grey-mid' },
+  { score_min: 80, label: 'Crítico (80+)', color: 'bg-[var(--priority-1)]/10 text-[#9b1c28] border-[var(--priority-1)]' },
+  { score_min: 50, label: 'Urgente (50+)', color: 'bg-[var(--priority-2)]/10 text-[#8d4a0c] border-[var(--priority-2)]' },
+  { score_min: 20, label: 'Atenção (20+)', color: 'bg-[var(--priority-3)]/15 text-[#856404] border-[var(--priority-3)]' },
+  { score_min: 0,  label: 'Todos',         color: 'bg-grey-card text-grey-text border-grey-mid' },
 ];
 
 export default async function PacientesPage({
