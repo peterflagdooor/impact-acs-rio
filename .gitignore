@@ -43,3 +43,6 @@ src/backend/dist/
 
 # IDE/local
 .DS_Store
+
+# Superpowers skill cache (gerado localmente)
+.superpowers/

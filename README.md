@@ -104,8 +104,6 @@ ngrok http 3001
 # Twilio Console → Sandbox webhook = https://<id>.ngrok.io/webhook/whatsapp
 ```
 
-Dashboard local: [http://localhost:3000](http://localhost:3000)
-
 **Produção:** [impact-acs-rio.vercel.app](https://impact-acs-rio.vercel.app)
 
 ### Testar o fluxo WhatsApp (sandbox)
