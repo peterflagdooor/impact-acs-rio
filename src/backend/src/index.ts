@@ -21,6 +21,7 @@ import {
   getInvisiveis,
 } from './lib/db.js';
 import { recomputeAndSave } from './lib/scoring.js';
+import { buildAgenda } from './lib/routing.js';
 import { getIsochrones } from './lib/ors.js';
 import { webhook } from './routes/webhook.js';
 import { chat } from './routes/chat.js';
@@ -72,6 +73,25 @@ app.get('/api/gestao/invisiveis', async (c) => {
     const limitStr = c.req.query('limit');
     const limit = limitStr ? Number(limitStr) : undefined;
     return c.json(await getInvisiveis({ equipe_id, categoria, limit }));
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get('/api/equipes/:equipe_id/agenda', async (c) => {
+  try {
+    const equipe_id = c.req.param('equipe_id');
+    const capStr = c.req.query('capacidade');
+    const comStr = c.req.query('com_justificativas');
+
+    const capacidade = capStr ? Math.max(1, Math.min(50, Number(capStr))) : undefined;
+    const com_justificativas = comStr === 'true' || comStr === '1';
+
+    const agenda = await buildAgenda({ equipe_id, capacidade, com_justificativas });
+    if (!agenda) {
+      return c.json({ error: `equipe ${equipe_id} não encontrada` }, 404);
+    }
+    return c.json(agenda);
   } catch (err) {
     return c.json({ error: (err as Error).message }, 500);
   }
