@@ -17,6 +17,8 @@ import {
   getOpenAlerts,
   getTerritoryHeatmap,
   getEquipesSedes,
+  getGestaoPainel,
+  getInvisiveis,
 } from './lib/db.js';
 import { recomputeAndSave } from './lib/scoring.js';
 import { getIsochrones } from './lib/ors.js';
@@ -48,6 +50,28 @@ app.get('/', (c) => c.json({ status: 'ok', service: 'impact-acs-backend' }));
 app.get('/api/kpis', async (c) => {
   try {
     return c.json(await getKpis());
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get('/api/gestao/painel', async (c) => {
+  try {
+    return c.json(await getGestaoPainel());
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get('/api/gestao/invisiveis', async (c) => {
+  try {
+    const equipe_id = c.req.query('equipe_id') ?? undefined;
+    const catStr = c.req.query('categoria');
+    const categoria = (catStr === '1' || catStr === '2' || catStr === '3')
+      ? (Number(catStr) as 1 | 2 | 3) : undefined;
+    const limitStr = c.req.query('limit');
+    const limit = limitStr ? Number(limitStr) : undefined;
+    return c.json(await getInvisiveis({ equipe_id, categoria, limit }));
   } catch (err) {
     return c.json({ error: (err as Error).message }, 500);
   }
