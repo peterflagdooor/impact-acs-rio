@@ -30,6 +30,7 @@ export async function listPatients(filters: {
 
   const rows = await sql<Array<PacienteComScore & { fatores: unknown }>>`
     SELECT p.*, s.score, s.fatores, s.justificativa,
+           s.flag_invisivel, s.flag_crise_sem_vinculo, s.categoria_invisivel, s.prioridade,
            (SELECT MAX(registrados_em)::text FROM visitas WHERE paciente_id = p.paciente_id) AS ultima_visita
     FROM pacientes p
     LEFT JOIN pacientes_scores s ON s.paciente_id = p.paciente_id
@@ -48,6 +49,7 @@ export async function listPatients(filters: {
 export async function getPatient(id: string): Promise<PacienteComScore | null> {
   const rows = await sql<Array<PacienteComScore & { fatores: unknown }>>`
     SELECT p.*, s.score, s.fatores, s.justificativa,
+           s.flag_invisivel, s.flag_crise_sem_vinculo, s.categoria_invisivel, s.prioridade,
            (SELECT MAX(registrados_em)::text FROM visitas WHERE paciente_id = p.paciente_id) AS ultima_visita
     FROM pacientes p
     LEFT JOIN pacientes_scores s ON s.paciente_id = p.paciente_id
@@ -162,15 +164,31 @@ export async function upsertScore(
   score: number,
   fatores: string[],
   justificativa: string | null,
+  flags: {
+    flag_invisivel: boolean;
+    flag_crise_sem_vinculo: boolean;
+    categoria_invisivel: 1 | 2 | 3 | null;
+    prioridade: 'CRITICO' | 'URGENTE' | 'ATENCAO' | 'ROTINA';
+  },
 ): Promise<void> {
   await sql`
-    INSERT INTO pacientes_scores (paciente_id, score, fatores, justificativa, calculado_em)
-    VALUES (${paciente_id}, ${score}, ${sql.json(fatores)}, ${justificativa}, NOW())
+    INSERT INTO pacientes_scores
+      (paciente_id, score, fatores, justificativa, calculado_em,
+       flag_invisivel, flag_crise_sem_vinculo, categoria_invisivel, prioridade)
+    VALUES (
+      ${paciente_id}, ${score}, ${sql.json(fatores)}, ${justificativa}, NOW(),
+      ${flags.flag_invisivel}, ${flags.flag_crise_sem_vinculo},
+      ${flags.categoria_invisivel}, ${flags.prioridade}
+    )
     ON CONFLICT (paciente_id) DO UPDATE SET
-      score = EXCLUDED.score,
-      fatores = EXCLUDED.fatores,
-      justificativa = EXCLUDED.justificativa,
-      calculado_em = EXCLUDED.calculado_em
+      score                  = EXCLUDED.score,
+      fatores                = EXCLUDED.fatores,
+      justificativa          = EXCLUDED.justificativa,
+      calculado_em           = EXCLUDED.calculado_em,
+      flag_invisivel         = EXCLUDED.flag_invisivel,
+      flag_crise_sem_vinculo = EXCLUDED.flag_crise_sem_vinculo,
+      categoria_invisivel    = EXCLUDED.categoria_invisivel,
+      prioridade             = EXCLUDED.prioridade
   `;
 }
 
