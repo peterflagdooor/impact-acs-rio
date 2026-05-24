@@ -1,0 +1,38 @@
+# Dados brutos do hackathon (nao commitar massa de dados sensivel)
+_inbox/*
+!_inbox/.gitkeep
+
+# Env / secrets
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.venv/
+venv/
+.pytest_cache/
+.ipynb_checkpoints/
+
+# Node
+node_modules/
+dist/
+build/
+.next/
+*.log
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Outputs locais
+outputs/
+tmp/
+*.sqlite
+*.db
