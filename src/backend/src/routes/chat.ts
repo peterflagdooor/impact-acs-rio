@@ -58,7 +58,7 @@ chat.post('/', async (c) => {
       const toolResults: Anthropic.ToolResultBlockParam[] = [];
       for (const tool of toolUses) {
         try {
-          const result = executeTool(tool.name, tool.input as Record<string, unknown>);
+          const result = await executeTool(tool.name, tool.input as Record<string, unknown>);
           toolResults.push({
             type: 'tool_result',
             tool_use_id: tool.id,

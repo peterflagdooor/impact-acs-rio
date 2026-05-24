@@ -1,4 +1,4 @@
-import { db, listPatients, getOpenAlerts, getKpis } from './db.js';
+import { listPatients, getOpenAlerts, getKpis, queryGroupStats } from './db.js';
 
 export interface ToolDef {
   name: string;
@@ -46,7 +46,7 @@ export const CHAT_TOOLS: ToolDef[] = [
   },
 ];
 
-export function executeTool(name: string, input: Record<string, unknown>): unknown {
+export async function executeTool(name: string, input: Record<string, unknown>): Promise<unknown> {
   switch (name) {
     case 'query_patients':
       return listPatients({
@@ -58,48 +58,8 @@ export function executeTool(name: string, input: Record<string, unknown>): unkno
       return getOpenAlerts((input.limit as number | undefined) ?? 20);
     case 'query_kpis':
       return getKpis();
-    case 'query_group_stats': {
-      const equipeFilter = input.equipe_id
-        ? `WHERE p.equipe_id = '${String(input.equipe_id).replace(/'/g, "''")}'`
-        : '';
-      const rows = db.prepare(`
-        SELECT
-          'gestantes' AS grupo,
-          SUM(p.gestacao) AS n_total,
-          SUM(CASE WHEN p.gestacao=1 AND v.paciente_id IS NOT NULL THEN 1 ELSE 0 END) AS n_visitados
-        FROM pacientes p
-        LEFT JOIN (SELECT DISTINCT paciente_id FROM visitas) v USING(paciente_id)
-        ${equipeFilter}
-        UNION ALL
-        SELECT 'hipertensos', SUM(p.hipertenso),
-          SUM(CASE WHEN p.hipertenso=1 AND v.paciente_id IS NOT NULL THEN 1 ELSE 0 END)
-        FROM pacientes p
-        LEFT JOIN (SELECT DISTINCT paciente_id FROM visitas) v USING(paciente_id)
-        ${equipeFilter}
-        UNION ALL
-        SELECT 'diabeticos', SUM(p.diabetico),
-          SUM(CASE WHEN p.diabetico=1 AND v.paciente_id IS NOT NULL THEN 1 ELSE 0 END)
-        FROM pacientes p
-        LEFT JOIN (SELECT DISTINCT paciente_id FROM visitas) v USING(paciente_id)
-        ${equipeFilter}
-        UNION ALL
-        SELECT 'idosos_66', SUM(CASE WHEN p.faixa_etaria='66+' THEN 1 ELSE 0 END),
-          SUM(CASE WHEN p.faixa_etaria='66+' AND v.paciente_id IS NOT NULL THEN 1 ELSE 0 END)
-        FROM pacientes p
-        LEFT JOIN (SELECT DISTINCT paciente_id FROM visitas) v USING(paciente_id)
-        ${equipeFilter}
-        UNION ALL
-        SELECT 'vulneraveis', SUM(p.situacao_vulnerabilidade),
-          SUM(CASE WHEN p.situacao_vulnerabilidade=1 AND v.paciente_id IS NOT NULL THEN 1 ELSE 0 END)
-        FROM pacientes p
-        LEFT JOIN (SELECT DISTINCT paciente_id FROM visitas) v USING(paciente_id)
-        ${equipeFilter}
-      `).all() as Array<{ grupo: string; n_total: number; n_visitados: number }>;
-      return rows.map(r => ({
-        ...r,
-        pct_cobertura: r.n_total ? Math.round(100 * r.n_visitados / r.n_total) : 0,
-      }));
-    }
+    case 'query_group_stats':
+      return queryGroupStats(input.equipe_id as string | undefined);
     default:
       throw new Error(`Tool desconhecida: ${name}`);
   }

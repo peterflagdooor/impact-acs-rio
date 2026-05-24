@@ -1,10 +1,13 @@
+// Allow JSON.stringify to serialize BigInt (postgres driver returns BIGSERIAL ids as BigInt)
+// @ts-expect-error: patching built-in BigInt
+BigInt.prototype.toJSON = function() { return Number(this); };
+
 import { serve } from '@hono/node-server';
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import 'dotenv/config';
 
 import {
-  db,
   getKpis,
   listPatients,
   getPatient,
@@ -13,6 +16,7 @@ import {
   getPatientAlerts,
   getOpenAlerts,
   getTerritoryHeatmap,
+  getEquipesSedes,
 } from './lib/db.js';
 import { recomputeAndSave } from './lib/scoring.js';
 import { getIsochrones } from './lib/ors.js';
@@ -29,21 +33,21 @@ app.use('*', cors({
 
 app.get('/', (c) => c.json({ status: 'ok', service: 'impact-acs-backend' }));
 
-app.get('/api/kpis', (c) => {
+app.get('/api/kpis', async (c) => {
   try {
-    return c.json(getKpis());
+    return c.json(await getKpis());
   } catch (err) {
     return c.json({ error: (err as Error).message }, 500);
   }
 });
 
-app.get('/api/patients', (c) => {
+app.get('/api/patients', async (c) => {
   try {
     const equipe_id = c.req.query('equipe_id');
     const score_min = c.req.query('score_min');
     const limit = c.req.query('limit');
     const offset = c.req.query('offset');
-    const patients = listPatients({
+    const patients = await listPatients({
       equipe_id: equipe_id ?? undefined,
       scoreMin: score_min ? Number(score_min) : undefined,
       limit: limit ? Number(limit) : 50,
@@ -55,46 +59,41 @@ app.get('/api/patients', (c) => {
   }
 });
 
-app.get('/api/patients/:id', (c) => {
+app.get('/api/patients/:id', async (c) => {
   const id = c.req.param('id');
   try {
-    const paciente = getPatient(id);
+    const paciente = await getPatient(id);
     if (!paciente) return c.json({ error: 'Not found' }, 404);
-    const visitas = getPatientVisits(id);
-    const eventos = getPatientEvents(id);
-    const alertas = getPatientAlerts(id);
+    const [visitas, eventos, alertas] = await Promise.all([
+      getPatientVisits(id),
+      getPatientEvents(id),
+      getPatientAlerts(id),
+    ]);
     return c.json({ paciente, visitas, eventos, alertas });
   } catch (err) {
     return c.json({ error: (err as Error).message }, 500);
   }
 });
 
-app.get('/api/alerts', (c) => {
+app.get('/api/alerts', async (c) => {
   try {
-    return c.json(getOpenAlerts(100));
+    return c.json(await getOpenAlerts(100));
   } catch (err) {
     return c.json({ error: (err as Error).message }, 500);
   }
 });
 
-app.get('/api/territory/heatmap', (c) => {
+app.get('/api/territory/heatmap', async (c) => {
   try {
-    return c.json(getTerritoryHeatmap());
+    return c.json(await getTerritoryHeatmap());
   } catch (err) {
     return c.json({ error: (err as Error).message }, 500);
   }
 });
 
-app.get('/api/territory/equipes', (c) => {
+app.get('/api/territory/equipes', async (c) => {
   try {
-    const rows = db.prepare(`
-      SELECT equipe_id, endereco_latitude AS lat, endereco_longitude AS lng,
-             (SELECT COUNT(*) FROM pacientes WHERE equipe_id = e.equipe_id) AS n_pacientes
-      FROM equipes e
-      WHERE endereco_latitude BETWEEN -23.5 AND -22.5
-        AND endereco_longitude BETWEEN -43.9 AND -43.0
-    `).all();
-    return c.json(rows);
+    return c.json(await getEquipesSedes());
   } catch (err) {
     return c.json({ error: (err as Error).message }, 500);
   }
@@ -114,10 +113,10 @@ app.post('/api/territory/isochrones', async (c) => {
   }
 });
 
-app.post('/api/score/recompute/:id', (c) => {
+app.post('/api/score/recompute/:id', async (c) => {
   const id = c.req.param('id');
   try {
-    return c.json(recomputeAndSave(id));
+    return c.json(await recomputeAndSave(id));
   } catch (err) {
     return c.json({ error: (err as Error).message }, 400);
   }
@@ -138,5 +137,5 @@ app.post('/api/extract', async (c) => {
 });
 
 const port = Number(process.env.PORT ?? 3001);
-console.log(`🚀 Backend rodando em http://localhost:${port}`);
+console.log(`Backend rodando em http://localhost:${port}`);
 serve({ fetch: app.fetch, port });

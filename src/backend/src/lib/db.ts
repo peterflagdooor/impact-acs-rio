@@ -1,162 +1,295 @@
-import Database from 'better-sqlite3';
-import { resolve } from 'node:path';
+import postgres from 'postgres';
+import 'dotenv/config';
 import type {
   Paciente, PacienteComScore, Visita, EventoClinico,
   RegistroWhatsapp, Alerta,
 } from '../types.js';
 
-// Resolve DB path: env var OR repo root db.sqlite
-const DB_PATH = process.env.DATABASE_PATH ?? resolve(process.cwd(), '../../db.sqlite');
+const DATABASE_URL = process.env.DATABASE_URL;
+if (!DATABASE_URL) {
+  throw new Error('DATABASE_URL não configurada em .env');
+}
 
-export const db = new Database(DB_PATH, { readonly: false });
-db.pragma('journal_mode = WAL');
-db.pragma('foreign_keys = ON');
+export const sql = postgres(DATABASE_URL, {
+  prepare: false,   // Supavisor transaction pooler requires prepare=false
+  max: 10,
+  idle_timeout: 20,
+});
 
-export function listPatients(filters: {
+// ---------- queries ----------
+
+export async function listPatients(filters: {
   equipe_id?: string;
   scoreMin?: number;
   scoreMax?: number;
   limit?: number;
   offset?: number;
-} = {}): PacienteComScore[] {
-  const where: string[] = [];
-  const params: Record<string, unknown> = {};
-  if (filters.equipe_id) { where.push('p.equipe_id = @equipe_id'); params.equipe_id = filters.equipe_id; }
-  if (filters.scoreMin !== undefined) { where.push('s.score >= @scoreMin'); params.scoreMin = filters.scoreMin; }
-  if (filters.scoreMax !== undefined) { where.push('s.score <= @scoreMax'); params.scoreMax = filters.scoreMax; }
-  const whereSql = where.length ? 'WHERE ' + where.join(' AND ') : '';
+} = {}): Promise<PacienteComScore[]> {
+  const limit = filters.limit ?? 50;
+  const offset = filters.offset ?? 0;
 
-  const sql = `
+  const rows = await sql<Array<PacienteComScore & { fatores: unknown }>>`
     SELECT p.*, s.score, s.fatores, s.justificativa,
-           (SELECT MAX(registrados_em) FROM visitas WHERE paciente_id = p.paciente_id) AS ultima_visita
+           (SELECT MAX(registrados_em)::text FROM visitas WHERE paciente_id = p.paciente_id) AS ultima_visita
     FROM pacientes p
     LEFT JOIN pacientes_scores s ON s.paciente_id = p.paciente_id
-    ${whereSql}
-    ORDER BY s.score DESC
-    LIMIT @limit OFFSET @offset
+    WHERE 1=1
+      ${filters.equipe_id ? sql`AND p.equipe_id = ${filters.equipe_id}` : sql``}
+      ${filters.scoreMin !== undefined ? sql`AND s.score >= ${filters.scoreMin}` : sql``}
+      ${filters.scoreMax !== undefined ? sql`AND s.score <= ${filters.scoreMax}` : sql``}
+    ORDER BY s.score DESC NULLS LAST
+    LIMIT ${limit} OFFSET ${offset}
   `;
-  const rows = db.prepare(sql).all({
-    ...params,
-    limit: filters.limit ?? 50,
-    offset: filters.offset ?? 0,
-  }) as Array<PacienteComScore & { fatores: string }>;
 
-  return rows.map(r => ({ ...r, fatores: JSON.parse(r.fatores ?? '[]') }));
+  // fatores comes back as JSON object (array) from JSONB — no parse needed
+  return rows.map(r => ({ ...r, fatores: (r.fatores as string[]) ?? [] }));
 }
 
-export function getPatient(id: string): PacienteComScore | null {
-  const row = db.prepare(`
+export async function getPatient(id: string): Promise<PacienteComScore | null> {
+  const rows = await sql<Array<PacienteComScore & { fatores: unknown }>>`
     SELECT p.*, s.score, s.fatores, s.justificativa,
-           (SELECT MAX(registrados_em) FROM visitas WHERE paciente_id = p.paciente_id) AS ultima_visita
+           (SELECT MAX(registrados_em)::text FROM visitas WHERE paciente_id = p.paciente_id) AS ultima_visita
     FROM pacientes p
     LEFT JOIN pacientes_scores s ON s.paciente_id = p.paciente_id
-    WHERE p.paciente_id = ?
-  `).get(id) as (PacienteComScore & { fatores: string }) | undefined;
-  if (!row) return null;
-  return { ...row, fatores: JSON.parse(row.fatores ?? '[]') };
+    WHERE p.paciente_id = ${id}
+  `;
+  if (rows.length === 0) return null;
+  const r = rows[0];
+  return { ...r, fatores: (r.fatores as string[]) ?? [] };
 }
 
-export function getPatientVisits(id: string): Visita[] {
-  return db.prepare('SELECT * FROM visitas WHERE paciente_id = ? ORDER BY registrados_em DESC').all(id) as Visita[];
+export async function getPatientVisits(id: string): Promise<Visita[]> {
+  const rows = await sql<Visita[]>`
+    SELECT id, profissional_id, registrados_em::text AS registrados_em,
+           ordem_visita_dia, paciente_id, origem
+    FROM visitas
+    WHERE paciente_id = ${id}
+    ORDER BY registrados_em DESC
+  `;
+  return rows.map(r => ({ ...r, id: Number(r.id) }));
 }
 
-export function getPatientEvents(id: string): EventoClinico[] {
-  return db.prepare('SELECT * FROM eventos_clinicos WHERE paciente_id = ? ORDER BY data_referencia DESC').all(id) as EventoClinico[];
+export async function getPatientEvents(id: string): Promise<EventoClinico[]> {
+  const rows = await sql<EventoClinico[]>`
+    SELECT id, paciente_id, tipo, data_referencia::text AS data_referencia
+    FROM eventos_clinicos
+    WHERE paciente_id = ${id}
+    ORDER BY data_referencia DESC
+  `;
+  return rows.map(r => ({ ...r, id: Number(r.id) }));
 }
 
-export function getPatientAlerts(id: string): Alerta[] {
-  return db.prepare('SELECT * FROM alertas WHERE paciente_id = ? AND resolvido_em IS NULL ORDER BY criado_em DESC').all(id) as Alerta[];
+export async function getPatientAlerts(id: string): Promise<Alerta[]> {
+  const rows = await sql<Alerta[]>`
+    SELECT id, paciente_id, tipo, mensagem, prioridade, origem,
+           criado_em::text AS criado_em, resolvido_em::text AS resolvido_em
+    FROM alertas
+    WHERE paciente_id = ${id} AND resolvido_em IS NULL
+    ORDER BY criado_em DESC
+  `;
+  return rows.map(r => ({ ...r, id: Number(r.id) }));
 }
 
-export function getOpenAlerts(limit = 50): (Alerta & { paciente_nome_proxy: string })[] {
-  return db.prepare(`
-    SELECT a.*, substr(a.paciente_id, 1, 12) AS paciente_nome_proxy
+export async function getOpenAlerts(limit = 50): Promise<Array<Alerta & { paciente_nome_proxy: string }>> {
+  const rows = await sql<Array<Alerta & { paciente_nome_proxy: string }>>`
+    SELECT a.id, a.paciente_id, a.tipo, a.mensagem, a.prioridade, a.origem,
+           a.criado_em::text AS criado_em, a.resolvido_em::text AS resolvido_em,
+           substr(a.paciente_id, 1, 12) AS paciente_nome_proxy
     FROM alertas a
     WHERE a.resolvido_em IS NULL
     ORDER BY a.prioridade ASC, a.criado_em DESC
-    LIMIT ?
-  `).all(limit) as (Alerta & { paciente_nome_proxy: string })[];
+    LIMIT ${limit}
+  `;
+  return rows.map(r => ({ ...r, id: Number(r.id) }));
 }
 
-export function getKpis() {
-  const total = (db.prepare('SELECT COUNT(*) AS n FROM pacientes').get() as { n: number }).n;
-  const visitados = (db.prepare('SELECT COUNT(DISTINCT paciente_id) AS n FROM visitas').get() as { n: number }).n;
-  const alertas_abertos = (db.prepare('SELECT COUNT(*) AS n FROM alertas WHERE resolvido_em IS NULL').get() as { n: number }).n;
-  const urgencias_30d = (db.prepare(`
-    SELECT COUNT(DISTINCT paciente_id) AS n FROM eventos_clinicos
+export async function getKpis() {
+  const [{ n: total }] = await sql`SELECT COUNT(*)::int AS n FROM pacientes`;
+  const [{ n: visitados }] = await sql`SELECT COUNT(DISTINCT paciente_id)::int AS n FROM visitas`;
+  const [{ n: alertas_abertos }] = await sql`SELECT COUNT(*)::int AS n FROM alertas WHERE resolvido_em IS NULL`;
+  const [{ n: urgencias_30d }] = await sql`
+    SELECT COUNT(DISTINCT paciente_id)::int AS n
+    FROM eventos_clinicos
     WHERE tipo = 'urgencia-emergencia-ou-internacao'
-      AND date(data_referencia) >= date('2025-12-31', '-30 days')
-  `).get() as { n: number }).n;
+      AND data_referencia >= DATE '2025-12-31' - INTERVAL '30 days'
+  `;
   return {
-    total_pacientes: total,
-    pacientes_visitados: visitados,
-    cobertura_pct: Math.round((100 * visitados) / total),
-    alertas_abertos,
-    urgencias_30d,
+    total_pacientes: Number(total),
+    pacientes_visitados: Number(visitados),
+    cobertura_pct: Math.round((100 * Number(visitados)) / Number(total)),
+    alertas_abertos: Number(alertas_abertos),
+    urgencias_30d: Number(urgencias_30d),
   };
 }
 
-export function getTerritoryHeatmap() {
-  const sql = `
+export async function getTerritoryHeatmap() {
+  const rows = await sql<Array<{ lat: number; lng: number; n_urgencias: number }>>`
     SELECT
-      ROUND(p.endereco_latitude, 3)  AS lat,
-      ROUND(p.endereco_longitude, 3) AS lng,
-      COUNT(*) AS n_urgencias
+      ROUND(p.endereco_latitude::numeric, 3)::float AS lat,
+      ROUND(p.endereco_longitude::numeric, 3)::float AS lng,
+      COUNT(*)::int AS n_urgencias
     FROM eventos_clinicos e
     JOIN pacientes p ON p.paciente_id = e.paciente_id
     WHERE e.tipo = 'urgencia-emergencia-ou-internacao'
     GROUP BY lat, lng
-    HAVING n_urgencias >= 3
+    HAVING COUNT(*) >= 3
     ORDER BY n_urgencias DESC
     LIMIT 200
   `;
-  return db.prepare(sql).all() as Array<{ lat: number; lng: number; n_urgencias: number }>;
+  return rows;
 }
 
-export function insertVisita(v: Omit<Visita, 'id'>): number {
-  const stmt = db.prepare(`
+export async function insertVisita(v: Omit<Visita, 'id'>): Promise<number> {
+  const [r] = await sql<Array<{ id: bigint }>>`
     INSERT INTO visitas (profissional_id, registrados_em, ordem_visita_dia, paciente_id, origem)
-    VALUES (@profissional_id, @registrados_em, @ordem_visita_dia, @paciente_id, @origem)
-  `);
-  return Number(stmt.run(v).lastInsertRowid);
+    VALUES (${v.profissional_id}, ${v.registrados_em}, ${v.ordem_visita_dia}, ${v.paciente_id}, ${v.origem})
+    RETURNING id
+  `;
+  return Number(r.id);
 }
 
-export function insertAlerta(a: Omit<Alerta, 'id' | 'criado_em' | 'resolvido_em'>): number {
-  const stmt = db.prepare(`
+export async function insertAlerta(a: Omit<Alerta, 'id' | 'criado_em' | 'resolvido_em'>): Promise<number> {
+  const [r] = await sql<Array<{ id: bigint }>>`
     INSERT INTO alertas (paciente_id, tipo, mensagem, prioridade, origem)
-    VALUES (@paciente_id, @tipo, @mensagem, @prioridade, @origem)
-  `);
-  return Number(stmt.run(a).lastInsertRowid);
+    VALUES (${a.paciente_id}, ${a.tipo}, ${a.mensagem}, ${a.prioridade}, ${a.origem})
+    RETURNING id
+  `;
+  return Number(r.id);
 }
 
-export function upsertScore(paciente_id: string, score: number, fatores: string[], justificativa: string | null): void {
-  db.prepare(`
+export async function upsertScore(
+  paciente_id: string,
+  score: number,
+  fatores: string[],
+  justificativa: string | null,
+): Promise<void> {
+  await sql`
     INSERT INTO pacientes_scores (paciente_id, score, fatores, justificativa, calculado_em)
-    VALUES (?, ?, ?, ?, datetime('now'))
-    ON CONFLICT(paciente_id) DO UPDATE SET
-      score = excluded.score,
-      fatores = excluded.fatores,
-      justificativa = excluded.justificativa,
-      calculado_em = excluded.calculado_em
-  `).run(paciente_id, score, JSON.stringify(fatores), justificativa);
+    VALUES (${paciente_id}, ${score}, ${sql.json(fatores)}, ${justificativa}, NOW())
+    ON CONFLICT (paciente_id) DO UPDATE SET
+      score = EXCLUDED.score,
+      fatores = EXCLUDED.fatores,
+      justificativa = EXCLUDED.justificativa,
+      calculado_em = EXCLUDED.calculado_em
+  `;
 }
 
-export function insertRegistroWhatsapp(r: Omit<RegistroWhatsapp, 'id' | 'recebido_em' | 'processado_em'>): number {
-  const stmt = db.prepare(`
+export async function insertRegistroWhatsapp(
+  r: Omit<RegistroWhatsapp, 'id' | 'recebido_em' | 'processado_em'>,
+): Promise<number> {
+  // dados_extraidos pode vir como string JSON ou null — armazenamos como JSONB
+  const dados = r.dados_extraidos ? (typeof r.dados_extraidos === 'string' ? JSON.parse(r.dados_extraidos) : r.dados_extraidos) : null;
+  const [row] = await sql<Array<{ id: bigint }>>`
     INSERT INTO registros_whatsapp
       (whatsapp_msg_id, from_number, profissional_id, mensagem_texto, dados_extraidos, paciente_id, status)
-    VALUES (@whatsapp_msg_id, @from_number, @profissional_id, @mensagem_texto, @dados_extraidos, @paciente_id, @status)
-  `);
-  return Number(stmt.run(r).lastInsertRowid);
+    VALUES (
+      ${r.whatsapp_msg_id},
+      ${r.from_number},
+      ${r.profissional_id},
+      ${r.mensagem_texto},
+      ${dados ? sql.json(dados) : null},
+      ${r.paciente_id},
+      ${r.status}
+    )
+    RETURNING id
+  `;
+  return Number(row.id);
 }
 
-export function updateRegistroWhatsapp(id: number, fields: Partial<RegistroWhatsapp>): void {
-  const sets: string[] = [];
-  const params: Record<string, unknown> = { id };
-  for (const [k, v] of Object.entries(fields)) {
-    sets.push(`${k} = @${k}`);
-    params[k] = v;
+export async function updateRegistroWhatsapp(
+  id: number,
+  fields: Partial<RegistroWhatsapp>,
+): Promise<void> {
+  if ('dados_extraidos' in fields && typeof fields.dados_extraidos === 'string') {
+    try { fields.dados_extraidos = JSON.parse(fields.dados_extraidos) as unknown as string; } catch { /* keep as-is */ }
   }
-  if (sets.length === 0) return;
-  db.prepare(`UPDATE registros_whatsapp SET ${sets.join(', ')}, processado_em = datetime('now') WHERE id = @id`).run(params);
+  // build dynamic UPDATE: faz sets só pros campos presentes
+  const allowed: (keyof RegistroWhatsapp)[] = ['whatsapp_msg_id', 'from_number', 'profissional_id', 'mensagem_texto', 'dados_extraidos', 'paciente_id', 'status'];
+  const updates = allowed.filter(k => k in fields);
+  if (updates.length === 0) return;
+
+  // Aplica updates um por um pra simplificar (poucos campos)
+  for (const k of updates) {
+    const v = (fields as Record<string, unknown>)[k];
+    const value = (k === 'dados_extraidos' && v !== null && typeof v === 'object') ? sql.json(v as object) : v;
+    await sql`UPDATE registros_whatsapp SET ${sql({ [k]: value })}, processado_em = NOW() WHERE id = ${id}`;
+  }
+}
+
+// Helper exposto pra scoring.ts (uso interno)
+export async function countOpenAlertsP1(paciente_id: string): Promise<number> {
+  const [{ n }] = await sql<Array<{ n: number }>>`
+    SELECT COUNT(*)::int AS n
+    FROM alertas
+    WHERE paciente_id = ${paciente_id}
+      AND prioridade = 1
+      AND resolvido_em IS NULL
+  `;
+  return Number(n);
+}
+
+// Helper for chat-tools.ts query_group_stats
+export async function queryGroupStats(equipe_id?: string) {
+  const equipeCond = equipe_id ? sql`WHERE p.equipe_id = ${equipe_id}` : sql``;
+  const rows = await sql<Array<{ grupo: string; n_total: number; n_visitados: number }>>`
+    SELECT 'gestantes' AS grupo,
+           SUM(p.gestacao)::int AS n_total,
+           SUM(CASE WHEN p.gestacao=1 AND v.paciente_id IS NOT NULL THEN 1 ELSE 0 END)::int AS n_visitados
+    FROM pacientes p
+    LEFT JOIN (SELECT DISTINCT paciente_id FROM visitas) v USING(paciente_id)
+    ${equipeCond}
+    UNION ALL
+    SELECT 'hipertensos',
+           SUM(p.hipertenso)::int,
+           SUM(CASE WHEN p.hipertenso=1 AND v.paciente_id IS NOT NULL THEN 1 ELSE 0 END)::int
+    FROM pacientes p
+    LEFT JOIN (SELECT DISTINCT paciente_id FROM visitas) v USING(paciente_id)
+    ${equipeCond}
+    UNION ALL
+    SELECT 'diabeticos',
+           SUM(p.diabetico)::int,
+           SUM(CASE WHEN p.diabetico=1 AND v.paciente_id IS NOT NULL THEN 1 ELSE 0 END)::int
+    FROM pacientes p
+    LEFT JOIN (SELECT DISTINCT paciente_id FROM visitas) v USING(paciente_id)
+    ${equipeCond}
+    UNION ALL
+    SELECT 'idosos_66',
+           SUM(CASE WHEN p.faixa_etaria='66+' THEN 1 ELSE 0 END)::int,
+           SUM(CASE WHEN p.faixa_etaria='66+' AND v.paciente_id IS NOT NULL THEN 1 ELSE 0 END)::int
+    FROM pacientes p
+    LEFT JOIN (SELECT DISTINCT paciente_id FROM visitas) v USING(paciente_id)
+    ${equipeCond}
+    UNION ALL
+    SELECT 'vulneraveis',
+           SUM(p.situacao_vulnerabilidade)::int,
+           SUM(CASE WHEN p.situacao_vulnerabilidade=1 AND v.paciente_id IS NOT NULL THEN 1 ELSE 0 END)::int
+    FROM pacientes p
+    LEFT JOIN (SELECT DISTINCT paciente_id FROM visitas) v USING(paciente_id)
+    ${equipeCond}
+  `;
+  return rows.map(r => ({
+    ...r,
+    n_total: Number(r.n_total ?? 0),
+    n_visitados: Number(r.n_visitados ?? 0),
+    pct_cobertura: r.n_total ? Math.round(100 * Number(r.n_visitados) / Number(r.n_total)) : 0,
+  }));
+}
+
+// Resolve alerta (used by routes/alerts.ts)
+export async function resolveAlerta(id: number): Promise<void> {
+  await sql`UPDATE alertas SET resolvido_em = NOW() WHERE id = ${id}`;
+}
+
+// Equipes territory (used by routes/territory.ts)
+export async function getEquipesSedes() {
+  const rows = await sql<Array<{ equipe_id: string; lat: number; lng: number; n_pacientes: number }>>`
+    SELECT e.equipe_id,
+           e.endereco_latitude AS lat,
+           e.endereco_longitude AS lng,
+           (SELECT COUNT(*)::int FROM pacientes WHERE equipe_id = e.equipe_id) AS n_pacientes
+    FROM equipes e
+    WHERE e.endereco_latitude BETWEEN -23.5 AND -22.5
+      AND e.endereco_longitude BETWEEN -43.9 AND -43.0
+  `;
+  return rows.map(r => ({ ...r, n_pacientes: Number(r.n_pacientes) }));
 }

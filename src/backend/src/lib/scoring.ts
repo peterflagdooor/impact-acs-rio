@@ -1,5 +1,8 @@
 import weights from '../config/scoring-weights.json' with { type: 'json' };
-import { db, getPatient, getPatientVisits, getPatientEvents, upsertScore } from './db.js';
+import {
+  getPatient, getPatientVisits, getPatientEvents,
+  upsertScore, countOpenAlertsP1,
+} from './db.js';
 
 const TODAY = new Date('2025-12-31');
 
@@ -7,12 +10,16 @@ function daysBetween(a: Date, b: Date): number {
   return Math.floor((b.getTime() - a.getTime()) / (1000 * 60 * 60 * 24));
 }
 
-export function computeScore(paciente_id: string): { score: number; fatores: string[] } {
-  const p = getPatient(paciente_id);
+export async function computeScore(paciente_id: string): Promise<{ score: number; fatores: string[] }> {
+  const p = await getPatient(paciente_id);
   if (!p) throw new Error(`paciente ${paciente_id} não existe`);
 
-  const visitas = getPatientVisits(paciente_id);
-  const eventos = getPatientEvents(paciente_id);
+  const [visitas, eventos, n_alertas_p1] = await Promise.all([
+    getPatientVisits(paciente_id),
+    getPatientEvents(paciente_id),
+    countOpenAlertsP1(paciente_id),
+  ]);
+
   const f = weights.factors;
   const fatores: string[] = [];
   let total = 0;
@@ -64,13 +71,7 @@ export function computeScore(paciente_id: string): { score: number; fatores: str
     total += f.gatilho.agendamento_proximo_14d;
   }
 
-  // Alerta crítico (P1) aberto — escalada ativa identificada pelo ACS em campo.
-  // Compensa a queda do fator temporal quando a visita revela severidade grave.
-  // Sai do score quando o gestor marcar o alerta como resolvido (resolvido_em != NULL).
-  const alertasP1 = db.prepare(
-    'SELECT COUNT(*) AS n FROM alertas WHERE paciente_id = ? AND prioridade = 1 AND resolvido_em IS NULL'
-  ).get(paciente_id) as { n: number };
-  if (alertasP1.n > 0) {
+  if (n_alertas_p1 > 0) {
     fatores.push('alerta_critico_aberto');
     total += f.gatilho.alerta_critico_aberto;
   }
@@ -79,8 +80,8 @@ export function computeScore(paciente_id: string): { score: number; fatores: str
   return { score, fatores };
 }
 
-export function recomputeAndSave(paciente_id: string): { score: number; fatores: string[] } {
-  const { score, fatores } = computeScore(paciente_id);
-  upsertScore(paciente_id, score, fatores, null);
+export async function recomputeAndSave(paciente_id: string): Promise<{ score: number; fatores: string[] }> {
+  const { score, fatores } = await computeScore(paciente_id);
+  await upsertScore(paciente_id, score, fatores, null);
   return { score, fatores };
 }

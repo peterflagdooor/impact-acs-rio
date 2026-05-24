@@ -2,7 +2,7 @@ import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { claude, SMALL_MODEL_ID } from './anthropic.js';
-import { db } from './db.js';
+import { sql } from './db.js';
 import type { Paciente } from '../types.js';
 
 const __filename = fileURLToPath(import.meta.url);
@@ -25,13 +25,14 @@ export interface ExtractedData {
   acoes_sugeridas: string[];
 }
 
-function getCandidates(limit = 30): Paciente[] {
-  return db.prepare(`
+async function getCandidates(limit = 30): Promise<Paciente[]> {
+  const rows = await sql<Paciente[]>`
     SELECT p.* FROM pacientes p
     JOIN pacientes_scores s ON s.paciente_id = p.paciente_id
     ORDER BY s.score DESC
-    LIMIT ?
-  `).all(limit) as Paciente[];
+    LIMIT ${limit}
+  `;
+  return rows;
 }
 
 function formatCandidates(candidates: Paciente[]): string {
@@ -41,7 +42,7 @@ function formatCandidates(candidates: Paciente[]): string {
 }
 
 export async function extractMessage(text: string): Promise<ExtractedData> {
-  const candidates = getCandidates(30);
+  const candidates = await getCandidates(30);
   const prompt = PROMPT_TEMPLATE
     .replace('{equipe_candidatos}', formatCandidates(candidates))
     .replace('{mensagem}', text);

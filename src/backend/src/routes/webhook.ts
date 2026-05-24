@@ -17,14 +17,14 @@ webhook.post('/whatsapp', async (c) => {
   const from = String(body.From ?? '');
   const text = String(body.Body ?? '').trim();
 
-  console.log(`📨 WhatsApp recebido de ${from}: ${text}`);
+  console.log(`WhatsApp recebido de ${from}: ${text}`);
 
   if (!text) {
     return c.text('<Response/>', 200, { 'Content-Type': 'application/xml' });
   }
 
   // 1. Persist raw
-  const registroId = insertRegistroWhatsapp({
+  const registroId = await insertRegistroWhatsapp({
     whatsapp_msg_id: msgId,
     from_number: from,
     profissional_id: null,
@@ -40,8 +40,8 @@ webhook.post('/whatsapp', async (c) => {
     extracted = await extractMessage(text);
   } catch (err) {
     console.error('Falha extração:', err);
-    updateRegistroWhatsapp(registroId, { status: 'falha' });
-    await sendWhatsapp(from, '⚠️ Tive um problema processando sua mensagem. Tente novamente.');
+    await updateRegistroWhatsapp(registroId, { status: 'falha' });
+    await sendWhatsapp(from, 'Tive um problema processando sua mensagem. Tente novamente.');
     return c.text('<Response/>', 200, { 'Content-Type': 'application/xml' });
   }
 
@@ -49,17 +49,17 @@ webhook.post('/whatsapp', async (c) => {
 
   // 3. No match
   if (!pacienteId || extracted.confidence === 'baixa') {
-    updateRegistroWhatsapp(registroId, {
+    await updateRegistroWhatsapp(registroId, {
       dados_extraidos: JSON.stringify(extracted),
       status: 'falha',
     });
     const nome = extracted.paciente_referido ?? 'paciente';
-    await sendWhatsapp(from, `🤔 Não consegui identificar com certeza ${nome}. Me dá mais contexto? (Ex: "Maria da Silva, equipe 3")`);
+    await sendWhatsapp(from, `Nao consegui identificar com certeza ${nome}. Me da mais contexto? (Ex: "Maria da Silva, equipe 3")`);
     return c.text('<Response/>', 200, { 'Content-Type': 'application/xml' });
   }
 
   // 4. Create derived visit
-  insertVisita({
+  await insertVisita({
     profissional_id: from,
     registrados_em: new Date().toISOString().slice(0, 10),
     ordem_visita_dia: 1,
@@ -69,7 +69,7 @@ webhook.post('/whatsapp', async (c) => {
 
   // 5. Create alerts
   for (const a of extracted.alertas) {
-    insertAlerta({
+    await insertAlerta({
       paciente_id: pacienteId,
       tipo: a.tipo,
       mensagem: a.mensagem,
@@ -79,9 +79,9 @@ webhook.post('/whatsapp', async (c) => {
   }
 
   // 6. Recompute score
-  const { score } = recomputeAndSave(pacienteId);
+  const { score } = await recomputeAndSave(pacienteId);
 
-  updateRegistroWhatsapp(registroId, {
+  await updateRegistroWhatsapp(registroId, {
     dados_extraidos: JSON.stringify(extracted),
     paciente_id: pacienteId,
     status: 'processado',
@@ -93,7 +93,7 @@ webhook.post('/whatsapp', async (c) => {
     : '';
   await sendWhatsapp(
     from,
-    `✅ Registrado pra ${extracted.paciente_referido}. Score=${Math.round(score)}.${alertaTxt}`,
+    `Registrado pra ${extracted.paciente_referido}. Score=${Math.round(score)}.${alertaTxt}`,
   );
 
   return c.text('<Response/>', 200, { 'Content-Type': 'application/xml' });
