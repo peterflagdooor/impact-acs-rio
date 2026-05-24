@@ -74,13 +74,7 @@
 
   <g fill="#F26B3A">
     <circle r="3.5">
-      <animateMotion dur="3s" repeatCount="indefinite" path="M30 130 L990 130"/>
-    </circle>
-    <circle r="3" opacity="0.85">
-      <animateMotion dur="4.4s" begin="0.6s" repeatCount="indefinite" path="M490 130 Q490 60 750 60 Q830 60 830 130"/>
-    </circle>
-    <circle r="3" opacity="0.85">
-      <animateMotion dur="4.4s" begin="2.1s" repeatCount="indefinite" path="M830 130 Q830 200 750 200 Q490 200 490 130"/>
+      <animateMotion dur="5s" repeatCount="indefinite" path="M30 130 L990 130"/>
     </circle>
   </g>
 </svg>

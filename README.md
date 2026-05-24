@@ -176,7 +176,10 @@ _refs/             repos de referência (read-only — não vão pro git)
 
 ## Equipe
 
-**Peter Flag** · [@peterflagdooor](https://github.com/peterflagdooor) — *adicionar demais membros antes da submissão*
+- **Peter Flag** · [@peterflagdooor](https://github.com/peterflagdooor)
+- **Gabriel Tyll** · gabriel.tyll@gmail.com
+- **Ricardo Brigante** · ricardo.brigante@gmail.com
+- **Vitor Medeiros** · vitoropdm@gmail.com
 
 ## Documentação técnica
 
