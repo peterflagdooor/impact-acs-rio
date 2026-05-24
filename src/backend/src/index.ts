@@ -14,6 +14,8 @@ import {
   getTerritoryHeatmap,
 } from './lib/db.js';
 import { recomputeAndSave } from './lib/scoring.js';
+import { webhook } from './routes/webhook.js';
+import { chat } from './routes/chat.js';
 
 const app = new Hono();
 
@@ -87,6 +89,20 @@ app.post('/api/score/recompute/:id', (c) => {
     return c.json(recomputeAndSave(id));
   } catch (err) {
     return c.json({ error: (err as Error).message }, 400);
+  }
+});
+
+app.route('/webhook', webhook);
+app.route('/api/chat', chat);
+
+app.post('/api/extract', async (c) => {
+  const { text } = await c.req.json();
+  try {
+    const { extractMessage } = await import('./lib/extract.js');
+    const data = await extractMessage(text);
+    return c.json(data);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
   }
 });
 
