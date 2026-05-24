@@ -14,6 +14,8 @@ Pasta de **drops brutos** do hackathon Claude Impact (saúde). Tudo que cai aqui
 | Arquivo | Categoria | Origem | Conteúdo essencial |
 |---|---|---|---|
 | [transcricao-apresentacao-problema.md](transcricao-apresentacao-problema.md) | Briefing | Apresentação ao vivo (Carol Tarento + Pedro, SMS-Rio) | Contexto ACS, escala (6.2k agentes, 4.5M pessoas), populações prioritárias, descrição dos 5 datasets, técnicas de anonimização |
+| [briefing-acs-vulnerabilidade.md](briefing-acs-vulnerabilidade.md) | Briefing | Google Doc oficial (link em `_refs/claude-impact-lab-saude/README.md`) | **Framework de risco familiar (alto/médio/rotineiro) + frequência prescrita + protocolos por linha de cuidado + sinais de alerta** |
+| [transcricao-qa-sms-rio.md](transcricao-qa-sms-rio.md) | Q&A operacional | Sessão de perguntas com equipe SMS-Rio (Carol e outros) durante o Lab | **Vitacare, WhatsApp ativo, 10 turnos/semana, reunião semanal com exemplo concreto, gaps NÃO implementados hoje (escore, família)** |
 | [data/equipes.parquet](data/equipes.parquet) | Dataset | Google Drive (claude-impact-lab-saude) | 49 equipes, lat/lng da sede. ~6 KB |
 | [data/pacientes.parquet](data/pacientes.parquet) | Dataset | Google Drive (claude-impact-lab-saude) | 97.938 pacientes, 12 colunas (demográficos + comorbidades + endereço). ~8.4 MB |
 | [data/eventos_clinicos.parquet](data/eventos_clinicos.parquet) | Dataset | Google Drive (claude-impact-lab-saude) | 100.503 eventos, 2 tipos (`agendamento`, `urgencia-emergencia-ou-internacao`). ~5.5 MB |
