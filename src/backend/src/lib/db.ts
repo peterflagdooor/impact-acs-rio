@@ -311,3 +311,126 @@ export async function getEquipesSedes() {
   `;
   return rows.map(r => ({ ...r, n_pacientes: Number(r.n_pacientes) }));
 }
+
+// ── Fase 2: painel de pressao e invisiveis ────────────────────────────────
+
+export interface PainelEquipe {
+  equipe_id: string;
+  total_pacientes: number;
+  pct_alto_risco: number;
+  pct_sem_visita: number;
+  pct_urgencia: number;
+  score_pressao: number;
+  crise_sem_vinculo: number;
+  alto_risco_invisivel: number;
+}
+
+export async function getGestaoPainel(): Promise<PainelEquipe[]> {
+  const rows = await sql<PainelEquipe[]>`
+    WITH base AS (
+      SELECT
+        p.paciente_id,
+        p.equipe_id,
+        (p.gestacao = 1 OR p.faixa_etaria = '0-6' OR p.hipertenso = 1
+          OR p.diabetico = 1 OR p.faixa_etaria = '66+' OR p.situacao_vulnerabilidade = 1) AS alto_risco,
+        EXISTS (SELECT 1 FROM visitas v WHERE v.paciente_id = p.paciente_id)            AS visitado,
+        EXISTS (SELECT 1 FROM eventos_clinicos e
+                WHERE e.paciente_id = p.paciente_id
+                  AND e.tipo = 'urgencia-emergencia-ou-internacao')                      AS teve_urgencia
+      FROM pacientes p
+    ),
+    flags AS (
+      SELECT
+        p.equipe_id,
+        SUM((s.categoria_invisivel = 1)::int)::int AS crise_sem_vinculo,
+        SUM((s.flag_invisivel)::int)::int          AS alto_risco_invisivel
+      FROM pacientes p
+      LEFT JOIN pacientes_scores s USING (paciente_id)
+      GROUP BY p.equipe_id
+    )
+    SELECT
+      b.equipe_id,
+      COUNT(*)::int                                                       AS total_pacientes,
+      ROUND(100.0 * SUM(b.alto_risco::int)    / COUNT(*), 1)::float       AS pct_alto_risco,
+      ROUND(100.0 * SUM((NOT b.visitado)::int)/ COUNT(*), 1)::float       AS pct_sem_visita,
+      ROUND(100.0 * SUM(b.teve_urgencia::int) / COUNT(*), 1)::float       AS pct_urgencia,
+      ROUND((
+        100.0 * SUM(b.alto_risco::int)    / COUNT(*) * 0.4 +
+        100.0 * SUM((NOT b.visitado)::int)/ COUNT(*) * 0.4 +
+        100.0 * SUM(b.teve_urgencia::int) / COUNT(*) * 0.2
+      )::numeric, 1)::float                                               AS score_pressao,
+      COALESCE(f.crise_sem_vinculo, 0)::int                               AS crise_sem_vinculo,
+      COALESCE(f.alto_risco_invisivel, 0)::int                            AS alto_risco_invisivel
+    FROM base b
+    LEFT JOIN flags f USING (equipe_id)
+    GROUP BY b.equipe_id, f.crise_sem_vinculo, f.alto_risco_invisivel
+    ORDER BY score_pressao DESC
+  `;
+  return rows;
+}
+
+export interface InvisivelRow {
+  paciente_id: string;
+  equipe_id: string;
+  faixa_etaria: string;
+  hipertenso: number;
+  diabetico: number;
+  gestacao: number;
+  situacao_vulnerabilidade: number;
+  n_urg_ano: number;
+  score: number;
+  prioridade: string | null;
+  categoria_invisivel: 1 | 2 | 3;
+  label_categoria: string;
+}
+
+const LABEL_INVISIVEL: Record<1 | 2 | 3, string> = {
+  1: 'Crise sem vínculo',
+  2: 'Alto risco sem contato',
+  3: 'Sem contato (sem condição especial)',
+};
+
+export async function getInvisiveis(opts: {
+  equipe_id?: string;
+  categoria?: 1 | 2 | 3;
+  limit?: number;
+} = {}): Promise<{ total: number; por_categoria: Record<1|2|3, number>; invisiveis: InvisivelRow[] }> {
+  const limit = opts.limit ?? 200;
+
+  const por_cat = await sql<Array<{ categoria_invisivel: 1 | 2 | 3; n: number }>>`
+    SELECT categoria_invisivel, COUNT(*)::int AS n
+    FROM pacientes_scores s
+    JOIN pacientes p USING (paciente_id)
+    WHERE s.categoria_invisivel IS NOT NULL
+      ${opts.equipe_id ? sql`AND p.equipe_id = ${opts.equipe_id}` : sql``}
+    GROUP BY categoria_invisivel
+    ORDER BY categoria_invisivel
+  `;
+  const por_categoria = { 1: 0, 2: 0, 3: 0 } as Record<1|2|3, number>;
+  for (const r of por_cat) por_categoria[r.categoria_invisivel] = r.n;
+
+  const rows = await sql<InvisivelRow[]>`
+    SELECT
+      p.paciente_id, p.equipe_id, p.faixa_etaria,
+      p.hipertenso, p.diabetico, p.gestacao, p.situacao_vulnerabilidade,
+      (SELECT COUNT(*)::int FROM eventos_clinicos e
+        WHERE e.paciente_id = p.paciente_id
+          AND e.tipo = 'urgencia-emergencia-ou-internacao')      AS n_urg_ano,
+      s.score, s.prioridade, s.categoria_invisivel
+    FROM pacientes_scores s
+    JOIN pacientes p USING (paciente_id)
+    WHERE s.categoria_invisivel IS NOT NULL
+      ${opts.equipe_id ? sql`AND p.equipe_id = ${opts.equipe_id}` : sql``}
+      ${opts.categoria ? sql`AND s.categoria_invisivel = ${opts.categoria}` : sql``}
+    ORDER BY s.categoria_invisivel, s.score DESC
+    LIMIT ${limit}
+  `;
+
+  const invisiveis: InvisivelRow[] = rows.map(r => ({
+    ...r,
+    label_categoria: LABEL_INVISIVEL[r.categoria_invisivel],
+  }));
+
+  const total = por_categoria[1] + por_categoria[2] + por_categoria[3];
+  return { total, por_categoria, invisiveis };
+}
