@@ -59,12 +59,18 @@ export interface Alerta {
   resolvido_em: string | null;
 }
 
+export type Prioridade = 'CRITICO' | 'URGENTE' | 'ATENCAO' | 'ROTINA';
+
 export interface PacienteScore {
   paciente_id: string;
   score: number;
   fatores: string;
   justificativa: string | null;
   calculado_em: string;
+  flag_invisivel: boolean;
+  flag_crise_sem_vinculo: boolean;
+  categoria_invisivel: 1 | 2 | 3 | null;
+  prioridade: Prioridade | null;
 }
 
 export interface PacienteComScore extends Paciente {
@@ -72,4 +78,8 @@ export interface PacienteComScore extends Paciente {
   fatores: string[];
   justificativa: string | null;
   ultima_visita: string | null;
+  flag_invisivel: boolean;
+  flag_crise_sem_vinculo: boolean;
+  categoria_invisivel: 1 | 2 | 3 | null;
+  prioridade: Prioridade | null;
 }
