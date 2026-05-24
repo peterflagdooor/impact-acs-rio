@@ -19,9 +19,13 @@ export function HeatmapMap({ hotspots, equipes }: Props) {
 
   useEffect(() => {
     if (!containerRef.current) return;
-    if (mapRef.current) {
-      mapRef.current.remove();
-      mapRef.current = null;
+
+    // Leaflet marca o DIV com _leaflet_id quando inicializa. Em StrictMode dev
+    // e HMR o effect re-roda e o container pode chegar aqui ainda marcado.
+    // Limpa antes pra evitar "Map container is being reused".
+    const container = containerRef.current as HTMLDivElement & { _leaflet_id?: number };
+    if (container._leaflet_id != null) {
+      delete container._leaflet_id;
     }
 
     const map = L.map(containerRef.current).setView([-22.93, -43.25], 13);
@@ -103,6 +107,13 @@ export function HeatmapMap({ hotspots, equipes }: Props) {
     mapRef.current = map;
     return () => {
       map.remove();
+      mapRef.current = null;
+      if (isoLayerRef.current) {
+        isoLayerRef.current = null;
+      }
+      // Limpa marca Leaflet do DIV pra próxima montagem não reutilizar instância
+      const c = container as HTMLDivElement & { _leaflet_id?: number };
+      if (c._leaflet_id != null) delete c._leaflet_id;
     };
   }, [hotspots, equipes]);
 
