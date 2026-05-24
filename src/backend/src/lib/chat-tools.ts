@@ -1,4 +1,4 @@
-import { listPatients, getOpenAlerts, getKpis, queryGroupStats } from './db.js';
+import { listPatients, getOpenAlerts, getKpis, queryGroupStats, getInvisiveis, getGestaoPainel } from './db.js';
 
 export interface ToolDef {
   name: string;
@@ -44,6 +44,26 @@ export const CHAT_TOOLS: ToolDef[] = [
       },
     },
   },
+  {
+    name: 'query_invisiveis',
+    description: 'Lista pacientes invisíveis (sem nenhuma visita registrada no ano), classificados em 3 categorias: 1=crise sem vínculo (3+ urgências e zero visita), 2=alto risco sem contato (gestante, criança 0-6, hipertenso, diabético, idoso 66+ ou vulnerável sem visita), 3=sem contato (sem condição especial). Filtros opcionais: equipe_id, categoria.',
+    input_schema: {
+      type: 'object',
+      properties: {
+        equipe_id: { type: 'string', description: 'Filtrar por equipe (opcional)' },
+        categoria: { type: 'number', enum: [1, 2, 3], description: '1, 2 ou 3 (opcional)' },
+        limit:     { type: 'number', description: 'Máximo de pacientes a retornar (default 50, max 200)' },
+      },
+    },
+  },
+  {
+    name: 'query_painel_pressao',
+    description: 'Retorna o painel de pressão por equipe: total de pacientes, % alto risco, % sem visita, % urgência e score de pressão (0–100). Ordenado por score_pressao desc.',
+    input_schema: {
+      type: 'object',
+      properties: {},
+    },
+  },
 ];
 
 export async function executeTool(name: string, input: Record<string, unknown>): Promise<unknown> {
@@ -60,6 +80,16 @@ export async function executeTool(name: string, input: Record<string, unknown>):
       return getKpis();
     case 'query_group_stats':
       return queryGroupStats(input.equipe_id as string | undefined);
+    case 'query_invisiveis': {
+      const limit = Math.min((input.limit as number | undefined) ?? 50, 200);
+      return getInvisiveis({
+        equipe_id: input.equipe_id as string | undefined,
+        categoria: input.categoria as 1 | 2 | 3 | undefined,
+        limit,
+      });
+    }
+    case 'query_painel_pressao':
+      return getGestaoPainel();
     default:
       throw new Error(`Tool desconhecida: ${name}`);
   }
