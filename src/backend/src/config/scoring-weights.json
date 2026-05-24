@@ -1,0 +1,25 @@
+{
+  "max_score": 100,
+  "factors": {
+    "clinical": {
+      "gestante": 15,
+      "crianca_0_6": 12,
+      "hipertenso_e_diabetico": 12,
+      "hipertenso_xor_diabetico": 6,
+      "idoso_66_mais": 8
+    },
+    "social": {
+      "situacao_vulnerabilidade": 12
+    },
+    "temporal": {
+      "sem_visita_180_mais": 20,
+      "sem_visita_90_a_180": 10,
+      "sem_visita_30_a_90": 3
+    },
+    "gatilho": {
+      "urgencia_menor_30d": 25,
+      "urgencia_30_a_90d": 10,
+      "agendamento_proximo_14d": 5
+    }
+  }
+}
