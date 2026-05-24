@@ -66,6 +66,70 @@ export interface IsochroneResponse {
   features: IsochroneFeature[];
 }
 
+export interface PainelEquipe {
+  equipe_id: string;
+  total_pacientes: number;
+  pct_alto_risco: number;
+  pct_sem_visita: number;
+  pct_urgencia: number;
+  score_pressao: number;
+  crise_sem_vinculo: number;
+  alto_risco_invisivel: number;
+}
+
+export interface InvisivelRow {
+  paciente_id: string;
+  equipe_id: string;
+  faixa_etaria: string;
+  hipertenso: number;
+  diabetico: number;
+  gestacao: number;
+  situacao_vulnerabilidade: number;
+  n_urg_ano: number;
+  score: number;
+  prioridade: string | null;
+  categoria_invisivel: 1 | 2 | 3;
+  label_categoria: string;
+}
+
+export interface InvisivelResponse {
+  total: number;
+  por_categoria: { 1: number; 2: number; 3: number };
+  invisiveis: InvisivelRow[];
+}
+
+export interface AgendaItem {
+  ordem_visita: number;
+  paciente_id: string;
+  faixa_etaria: string;
+  hipertenso: number;
+  diabetico: number;
+  gestacao: number;
+  situacao_vulnerabilidade: number;
+  score: number;
+  prioridade: string | null;
+  flag_invisivel: boolean;
+  flag_crise_sem_vinculo: boolean;
+  dias_sem_visita: number;
+  n_urg_30d: number;
+  n_urg_ano: number;
+  tem_agendamento_futuro: boolean;
+  distancia_anterior_km: number;
+  distancia_acumulada_km: number;
+  endereco_latitude: number;
+  endereco_longitude: number;
+  justificativa: string | null;
+}
+
+export interface Agenda {
+  equipe_id: string;
+  sede: { lat: number; lon: number };
+  capacidade: number;
+  total_itens: number;
+  distancia_total_km: number;
+  agenda: AgendaItem[];
+}
+
 export const apiClient = {
   kpis: () => api<KPIs>('/api/kpis'),
   patients: (params: { equipe_id?: string; score_min?: number; limit?: number; offset?: number } = {}) => {
@@ -86,16 +150,30 @@ export const apiClient = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ lat, lng, ranges_min }),
     }),
+  gestaoPainel: () => api<PainelEquipe[]>('/api/gestao/painel'),
+  gestaoInvisiveis: (params: { equipe_id?: string; categoria?: 1 | 2 | 3; limit?: number } = {}) => {
+    const q = new URLSearchParams();
+    if (params.equipe_id) q.set('equipe_id', params.equipe_id);
+    if (params.categoria) q.set('categoria', String(params.categoria));
+    if (params.limit) q.set('limit', String(params.limit));
+    return api<InvisivelResponse>(`/api/gestao/invisiveis?${q.toString()}`);
+  },
+  agendaEquipe: (equipe_id: string, params: { capacidade?: number; com_justificativas?: boolean } = {}) => {
+    const q = new URLSearchParams();
+    if (params.capacidade) q.set('capacidade', String(params.capacidade));
+    if (params.com_justificativas !== undefined) q.set('com_justificativas', String(params.com_justificativas));
+    return api<Agenda>(`/api/equipes/${equipe_id}/agenda?${q.toString()}`);
+  },
 };
 
-// Helper: priority level from score (1=urgente, 4=rotina)
+// Helper: priority level from score (1=critico, 4=rotina). Escala 0-250+ apos Fase 2.
 export function scoreToPriority(score: number): 1 | 2 | 3 | 4 {
-  if (score >= 70) return 1;
-  if (score >= 50) return 2;
-  if (score >= 30) return 3;
-  return 4;
+  if (score >= 80) return 1;   // CRITICO
+  if (score >= 50) return 2;   // URGENTE
+  if (score >= 20) return 3;   // ATENCAO
+  return 4;                    // ROTINA
 }
 
 export function priorityLabel(p: 1 | 2 | 3 | 4): string {
-  return { 1: 'Urgente', 2: 'Alto', 3: 'Médio', 4: 'Rotina' }[p];
+  return { 1: 'Crítico', 2: 'Urgente', 3: 'Atenção', 4: 'Rotina' }[p];
 }
