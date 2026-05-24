@@ -2,15 +2,19 @@ import { apiClient } from '@/lib/api';
 import { KpiCard } from '@/components/kpi-card';
 import { PatientCard } from '@/components/patient-card';
 import { MapSection } from '@/components/map-section';
+import { PressaoTable } from '@/components/pressao-table';
+import { InvisivelCounters } from '@/components/invisivel-counters';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Dashboard() {
-  const [kpis, topPatients, hotspots, equipes] = await Promise.all([
+  const [kpis, topPatients, hotspots, equipes, painel, invisiveis] = await Promise.all([
     apiClient.kpis(),
     apiClient.patients({ limit: 12 }),
     apiClient.heatmap().catch(() => []),
     apiClient.equipesSedes().catch(() => []),
+    apiClient.gestaoPainel().catch(() => []),
+    apiClient.gestaoInvisiveis({ limit: 1 }).catch(() => ({ total: 0, por_categoria: { 1: 0, 2: 0, 3: 0 }, invisiveis: [] })),
   ]);
 
   return (
@@ -46,6 +50,29 @@ export default async function Dashboard() {
           para ver o alcance a pé do ACS em 10 e 15 minutos.
         </p>
         <MapSection hotspots={hotspots} equipes={equipes} />
+      </section>
+
+      <section>
+        <h2 className="text-2xl font-black mb-3" style={{ color: 'var(--blue-secondary)' }}>
+          Pacientes invisíveis
+        </h2>
+        <p className="text-sm mb-4 max-w-2xl" style={{ color: 'var(--grey-text)' }}>
+          Pacientes sem nenhuma visita registrada no ano, classificados em 3 categorias de risco.
+          O grupo 1 (crise sem vínculo) é o mais crítico — pessoas que foram ao hospital 3+ vezes
+          e ainda assim não têm vínculo com a equipe de saúde da família.
+        </p>
+        <InvisivelCounters data={invisiveis} />
+      </section>
+
+      <section>
+        <h2 className="text-2xl font-black mb-3" style={{ color: 'var(--blue-secondary)' }}>
+          Pressão por equipe
+        </h2>
+        <p className="text-sm mb-4 max-w-2xl" style={{ color: 'var(--grey-text)' }}>
+          Ranking de equipes por score composto de pressão (40% alto risco + 40% sem visita +
+          20% urgência). Top 10 equipes do território — quem precisa de reforço operacional.
+        </p>
+        <PressaoTable painel={painel} limit={10} />
       </section>
 
       <section>
