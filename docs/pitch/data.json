@@ -1,0 +1,132 @@
+{
+  "totals": {
+    "cadastros": 97938,
+    "sem_visita_12m": 48838,
+    "pct_sem_visita": 0.4987,
+    "idosos_total": 24858,
+    "idosos_sem_visita": 12636,
+    "hipertensos_sem_visita": 5689,
+    "diabeticos_sem_visita": 1620,
+    "gestantes_sem_visita": 70,
+    "vulneraveis_sem_visita": 2838,
+    "n_equipes": 49,
+    "visitas_total_ano": 159599
+  },
+  "territorio_top": [
+    {
+      "lat": -22.915,
+      "lng": -43.25,
+      "count": 1865
+    },
+    {
+      "lat": -22.915,
+      "lng": -43.255,
+      "count": 1836
+    },
+    {
+      "lat": -22.94,
+      "lng": -43.25,
+      "count": 1800
+    },
+    {
+      "lat": -22.94,
+      "lng": -43.255,
+      "count": 1582
+    },
+    {
+      "lat": -22.915,
+      "lng": -43.26,
+      "count": 1552
+    },
+    {
+      "lat": -22.935,
+      "lng": -43.245,
+      "count": 1344
+    },
+    {
+      "lat": -22.93,
+      "lng": -43.26,
+      "count": 1233
+    },
+    {
+      "lat": -22.915,
+      "lng": -43.245,
+      "count": 1213
+    }
+  ],
+  "top_pacientes": [
+    {
+      "id": "P-001",
+      "faixa_etaria": "66+",
+      "sexo": "Masculino",
+      "score": 98,
+      "tags": [
+        "hipertenso",
+        "diabético",
+        "vulnerável"
+      ]
+    },
+    {
+      "id": "P-002",
+      "faixa_etaria": "45-65",
+      "sexo": "Masculino",
+      "score": 88,
+      "tags": [
+        "hipertenso",
+        "diabético",
+        "vulnerável"
+      ]
+    },
+    {
+      "id": "P-003",
+      "faixa_etaria": "45-65",
+      "sexo": "Feminino",
+      "score": 88,
+      "tags": [
+        "hipertenso",
+        "diabético",
+        "vulnerável"
+      ]
+    },
+    {
+      "id": "P-004",
+      "faixa_etaria": "45-65",
+      "sexo": "Masculino",
+      "score": 88,
+      "tags": [
+        "hipertenso",
+        "diabético",
+        "vulnerável"
+      ]
+    },
+    {
+      "id": "P-005",
+      "faixa_etaria": "66+",
+      "sexo": "Feminino",
+      "score": 84,
+      "tags": [
+        "hipertenso",
+        "diabético",
+        "vulnerável"
+      ]
+    }
+  ],
+  "exemplo_extracao": {
+    "input_whatsapp": "Visitei dona Maria, 72 anos, rua X 123. Tosse seca há 3 dias, PA 14/9. Pedi pra ir no posto amanhã.",
+    "output_json": {
+      "paciente": "Maria, 72",
+      "sintomas": [
+        "tosse seca 3d"
+      ],
+      "pressao": "140/90",
+      "gravidade": "média",
+      "acao": "encaminhamento UBS"
+    }
+  },
+  "exemplo_chat": {
+    "pergunta": "Quais idosos da AP3.1 sem visita nos últimos 6 meses?",
+    "tool_call": "query_patients({ ap:\"3.1\", idade:\">=66\", sem_visita:\"6m\" })",
+    "resposta_total": 312
+  },
+  "extracted_at": "2026-05-24"
+}

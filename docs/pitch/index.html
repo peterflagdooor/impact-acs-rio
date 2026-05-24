@@ -1,0 +1,2377 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ACS Inteligente — Inteligência no Território · SMS Rio</title>
+
+<script type="application/json" id="pitch-data">
+{"totals":{"cadastros":97938,"sem_visita_12m":48838,"pct_sem_visita":0.4987,"idosos_total":24858,"idosos_sem_visita":12636,"hipertensos_sem_visita":5689,"diabeticos_sem_visita":1620,"gestantes_sem_visita":70,"vulneraveis_sem_visita":2838,"n_equipes":49,"visitas_total_ano":159599},"territorio_top":[{"lat":-22.915,"lng":-43.25,"count":1865},{"lat":-22.915,"lng":-43.255,"count":1836},{"lat":-22.94,"lng":-43.25,"count":1800},{"lat":-22.94,"lng":-43.255,"count":1582},{"lat":-22.915,"lng":-43.26,"count":1552},{"lat":-22.935,"lng":-43.245,"count":1344},{"lat":-22.93,"lng":-43.26,"count":1233},{"lat":-22.915,"lng":-43.245,"count":1213}],"top_pacientes":[{"id":"P-001","faixa_etaria":"66+","sexo":"Masculino","score":98,"tags":["hipertenso","diabético","vulnerável"]},{"id":"P-002","faixa_etaria":"45-65","sexo":"Masculino","score":88,"tags":["hipertenso","diabético","vulnerável"]},{"id":"P-003","faixa_etaria":"45-65","sexo":"Feminino","score":88,"tags":["hipertenso","diabético","vulnerável"]},{"id":"P-004","faixa_etaria":"45-65","sexo":"Masculino","score":88,"tags":["hipertenso","diabético","vulnerável"]},{"id":"P-005","faixa_etaria":"66+","sexo":"Feminino","score":84,"tags":["hipertenso","diabético","vulnerável"]}],"exemplo_extracao":{"input_whatsapp":"Visitei dona Maria, 72 anos, rua X 123. Tosse seca há 3 dias, PA 14/9. Pedi pra ir no posto amanhã.","output_json":{"paciente":"Maria, 72","sintomas":["tosse seca 3d"],"pressao":"140/90","gravidade":"média","acao":"encaminhamento UBS"}},"exemplo_chat":{"pergunta":"Quais idosos da AP3.1 sem visita nos últimos 6 meses?","tool_call":"query_patients({ ap:\"3.1\", idade:\">=66\", sem_visita:\"6m\" })","resposta_total":312},"extracted_at":"2026-05-24"}
+</script>
+
+<style>
+/* ============ FONTES — Editorial híbrida ============ */
+@font-face {
+  font-family: 'Fraunces';
+  src: url('./fonts/Fraunces-Variable.woff2') format('woff2-variations'),
+       url('./fonts/Fraunces-Variable.woff2') format('woff2');
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: block;
+}
+@font-face {
+  font-family: 'JetBrains Mono';
+  src: url('./fonts/JetBrainsMono.woff2') format('woff2-variations'),
+       url('./fonts/JetBrainsMono.woff2') format('woff2');
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: block;
+}
+@font-face { font-family: 'Cera Pro'; src: url('./fonts/CeraPro-Light.otf')  format('opentype'); font-weight: 300; font-style: normal; font-display: block; }
+@font-face { font-family: 'Cera Pro'; src: url('./fonts/CeraPro-Medium.otf') format('opentype'); font-weight: 500; font-style: normal; font-display: block; }
+@font-face { font-family: 'Cera Pro'; src: url('./fonts/CeraPro-Bold.otf')   format('opentype'); font-weight: 700; font-style: normal; font-display: block; }
+@font-face { font-family: 'Cera Pro'; src: url('./fonts/CeraPro-Black.otf')  format('opentype'); font-weight: 900; font-style: normal; font-display: block; }
+
+/* ============ TOKENS — Editorial Civic ============ */
+:root {
+  /* Paleta institucional — autoridade azul + acento ferrugem */
+  --ink:           #0e1b2a;    /* preto-tinta */
+  --ink-soft:      #2a3849;
+  --ink-muted:     #5b6a7d;
+  --rule:          #c9bfae;    /* rule-line cor de papel */
+  --rule-soft:     #e7ddca;
+  --paper:         #f6efe2;    /* papel quente, NÃO branco */
+  --paper-deep:    #ecdfc6;    /* sombra de papel */
+  --cream:         #fbf6eb;
+
+  /* Azul institucional Prefeitura, ajustado pra ficar mais profundo */
+  --blue:          #0a3d6e;
+  --blue-deep:     #062a4f;
+  --blue-print:    #2563aa;
+
+  /* Acentos */
+  --rust:          #b8492e;    /* o destaque editorial — substitui o vermelho bootstrap */
+  --rust-deep:     #8e3520;
+  --ochre:         #c89432;
+  --moss:          #5a6b3e;
+
+  /* Clínico (só dataset) */
+  --clinical-red:    #a4252b;
+  --clinical-amber:  #c47a18;
+
+  --duration-fast: 250ms;
+  --duration-med:  500ms;
+  --duration-slow: 900ms;
+  --ease-editorial: cubic-bezier(.22, .61, .36, 1);
+
+  /* Tipografia */
+  --display: 'Fraunces', 'Times New Roman', serif;
+  --sans:    'Cera Pro', 'Helvetica Neue', sans-serif;
+  --mono:    'JetBrains Mono', 'SF Mono', 'Menlo', monospace;
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+html, body {
+  height: 100%;
+  overflow: hidden;
+  background: var(--paper);
+  color: var(--ink);
+}
+
+body {
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: 17px;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  font-feature-settings: 'liga' 1, 'kern' 1, 'tnum' 0, 'ss01' 1;
+  letter-spacing: -0.005em;
+  position: relative;
+}
+
+/* Noise overlay no fundo, sutil */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.045;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='200' height='200'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='1.2' numOctaves='2' seed='8'/><feColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.9 0'/></filter><rect width='200' height='200' filter='url(%23n)'/></svg>");
+}
+
+/* Vinheta sutil nos cantos */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9998;
+  background: radial-gradient(ellipse at center, transparent 55%, rgba(15,30,50,0.07) 100%);
+}
+
+/* ============ CHROME INSTITUCIONAL ============ */
+.gov-bar {
+  position: fixed; top: 0; left: 0; right: 0;
+  height: 26px;
+  background: var(--ink);
+  color: var(--cream);
+  display: flex; align-items: center;
+  padding: 0 28px;
+  z-index: 1000;
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.gov-bar .left, .gov-bar .right { display: flex; align-items: center; gap: 18px; }
+.gov-bar .right { margin-left: auto; gap: 14px; opacity: 0.7; }
+.gov-bar .sep { color: rgba(246,239,226,0.25); font-weight: 400; }
+.gov-bar .pulse {
+  display: inline-block;
+  width: 5px; height: 5px;
+  border-radius: 50%;
+  background: var(--rust);
+  margin-right: 8px;
+  box-shadow: 0 0 0 0 var(--rust);
+  animation: pulse 2.4s infinite;
+}
+@keyframes pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(184,73,46,0.6); }
+  70%  { box-shadow: 0 0 0 8px rgba(184,73,46,0); }
+  100% { box-shadow: 0 0 0 0 rgba(184,73,46,0); }
+}
+
+.brand-bar {
+  position: fixed; top: 26px; left: 0; right: 0;
+  height: 62px;
+  background: var(--paper);
+  display: flex; align-items: center;
+  padding: 0 28px;
+  z-index: 1000;
+  border-bottom: 1px solid var(--rule);
+  box-shadow: 0 1px 0 var(--paper-deep);
+}
+.brand-bar::before {
+  /* Double-rule editorial classic */
+  content: '';
+  position: absolute;
+  left: 28px; right: 28px;
+  bottom: -4px;
+  height: 1px;
+  background: var(--rule);
+}
+.brand-bar .crest {
+  width: 38px; height: 38px;
+  border: 1.5px solid var(--ink);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--display);
+  font-weight: 900;
+  font-variation-settings: 'opsz' 144, 'SOFT' 0;
+  font-size: 20px;
+  color: var(--ink);
+  margin-right: 16px;
+  background: var(--cream);
+  letter-spacing: -0.02em;
+}
+.brand-bar .org { display: flex; flex-direction: column; line-height: 1; }
+.brand-bar .org .l1 {
+  font-family: var(--sans);
+  font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 5px;
+}
+.brand-bar .org .l2 {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 144, 'SOFT' 0;
+  font-weight: 700;
+  font-size: 21px;
+  color: var(--ink);
+  letter-spacing: -0.022em;
+  line-height: 1;
+}
+.brand-bar .right-anchor {
+  margin-left: auto;
+  display: flex; align-items: center; gap: 18px;
+}
+.brand-bar .meta {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-muted);
+  font-weight: 500;
+  letter-spacing: 0;
+}
+.brand-bar .badge {
+  font-family: var(--sans);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--paper);
+  background: var(--ink);
+  padding: 7px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+.brand-bar .badge .star { color: var(--rust); }
+
+.foot-bar {
+  position: fixed; bottom: 0; left: 0; right: 0;
+  height: 44px;
+  background: var(--paper);
+  border-top: 1px solid var(--rule);
+  display: flex; align-items: center;
+  padding: 0 28px;
+  z-index: 1000;
+}
+.foot-bar::before {
+  content: '';
+  position: absolute;
+  left: 28px; right: 28px;
+  top: 3px;
+  height: 1px;
+  background: var(--rule);
+}
+.foot-bar .scene-tag {
+  display: flex; align-items: baseline; gap: 14px;
+}
+.foot-bar .scene-tag .num {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 18, 'SOFT' 50;
+  font-weight: 500;
+  font-style: italic;
+  font-size: 22px;
+  color: var(--rust);
+  letter-spacing: -0.02em;
+  line-height: 1;
+  font-feature-settings: 'lnum' 0, 'onum' 1;
+}
+.foot-bar .scene-tag .of {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-muted);
+  letter-spacing: 0.05em;
+}
+.foot-bar .scene-tag .lbl {
+  font-family: var(--sans);
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--ink);
+}
+.foot-bar .meta {
+  margin-left: auto;
+  display: flex; gap: 28px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  color: var(--ink-muted);
+  letter-spacing: 0.02em;
+}
+.foot-bar .meta .k { color: var(--ink-muted); margin-right: 6px; }
+.foot-bar .meta .v { color: var(--ink); font-weight: 700; }
+
+/* ============ STAGE ============ */
+#stage {
+  position: absolute;
+  top: 88px; bottom: 44px; left: 0; right: 0;
+  overflow: hidden;
+}
+
+.scene {
+  position: absolute;
+  inset: 0;
+  padding: 48px 56px;
+  opacity: 0;
+  transform: translate3d(28px, 0, 0);
+  pointer-events: none;
+  transition: opacity var(--duration-med) var(--ease-editorial),
+              transform var(--duration-med) var(--ease-editorial);
+  overflow: hidden;
+}
+.scene.active { opacity: 1; transform: translate3d(0,0,0); pointer-events: auto; }
+.scene.exit-left { opacity: 0; transform: translate3d(-28px, 0, 0); }
+
+.scene .canvas {
+  width: 100%; height: 100%;
+  max-width: 1380px;
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+}
+
+/* === Editorial anchor — número grande de cena no canto sup esquerdo, número editorial === */
+.folio {
+  position: absolute;
+  top: 38px;
+  left: 56px;
+  display: flex;
+  flex-direction: column;
+  pointer-events: none;
+  z-index: 5;
+}
+.folio .roman {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 144, 'SOFT' 0, 'WONK' 1;
+  font-weight: 300;
+  font-style: italic;
+  font-size: 14px;
+  color: var(--ink-muted);
+  letter-spacing: 0.06em;
+  margin-bottom: 4px;
+}
+.folio .rule {
+  width: 38px; height: 1px;
+  background: var(--rust);
+  margin-bottom: 6px;
+}
+.folio .label {
+  font-family: var(--sans);
+  font-size: 9.5px; font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.22em;
+  color: var(--ink);
+}
+
+/* === Eyebrow editorial === */
+.eyebrow {
+  font-family: var(--sans);
+  font-size: 10px; font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.24em;
+  color: var(--rust);
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 22px;
+}
+.eyebrow::before, .eyebrow::after {
+  content: ''; width: 28px; height: 1px;
+  background: var(--rust);
+  flex-shrink: 0;
+}
+.eyebrow.left::after { display: none; }
+.eyebrow.left { padding-left: 0; }
+.eyebrow.left::before { display: none; }
+
+/* === Display headings — Fraunces === */
+.display {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 144, 'SOFT' 50, 'WONK' 0;
+  font-weight: 450;
+  font-style: normal;
+  color: var(--ink);
+  letter-spacing: -0.022em;
+  line-height: 0.98;
+  text-wrap: balance;
+}
+.display em {
+  font-style: italic;
+  color: var(--rust);
+  font-variation-settings: 'opsz' 144, 'SOFT' 100, 'WONK' 1;
+}
+.display strong, .display b {
+  font-weight: 600;
+  color: var(--blue-deep);
+  font-style: normal;
+}
+.lede {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 36, 'SOFT' 50;
+  font-weight: 350;
+  font-size: 22px;
+  line-height: 1.4;
+  color: var(--ink-soft);
+  max-width: 60ch;
+  letter-spacing: -0.005em;
+}
+.lede em { font-style: italic; color: var(--rust); }
+
+/* === Common rule lines === */
+.dbl-rule {
+  position: relative; height: 5px;
+}
+.dbl-rule::before, .dbl-rule::after {
+  content: ''; position: absolute; left: 0; right: 0; height: 1px;
+  background: var(--ink);
+}
+.dbl-rule::before { top: 0; }
+.dbl-rule::after  { bottom: 0; }
+
+/* === Animações === */
+.anim { opacity: 0; transform: translateY(14px); transition: opacity 700ms var(--ease-editorial), transform 700ms var(--ease-editorial); }
+.scene.active .anim { opacity: 1; transform: translateY(0); }
+.scene.active .d1 { transition-delay: 120ms; }
+.scene.active .d2 { transition-delay: 320ms; }
+.scene.active .d3 { transition-delay: 520ms; }
+.scene.active .d4 { transition-delay: 720ms; }
+.scene.active .d5 { transition-delay: 920ms; }
+.scene.active .d6 { transition-delay: 1120ms; }
+
+/* ============ CENA 01 — ABERTURA ============ */
+.scene-1 .canvas { justify-content: center; }
+.scene-1 .hero { display: grid; grid-template-columns: 1fr; gap: 56px; max-width: 1100px; }
+.scene-1 .hero h1 {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 144, 'SOFT' 50, 'WONK' 0;
+  font-weight: 350;
+  font-size: 92px;
+  line-height: 0.95;
+  letter-spacing: -0.035em;
+  color: var(--ink);
+}
+.scene-1 .hero h1 .drop {
+  display: inline-block;
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 144, 'SOFT' 0, 'WONK' 1;
+  font-weight: 700;
+  font-style: italic;
+  color: var(--rust);
+  margin-right: 0.08em;
+}
+.scene-1 .hero h1 .nb {
+  font-family: var(--display);
+  font-style: italic;
+  font-variation-settings: 'opsz' 144, 'SOFT' 100, 'WONK' 1;
+  color: var(--blue-deep);
+  font-weight: 500;
+}
+.scene-1 .meta-strip {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: 40px;
+  align-items: center;
+  padding-top: 32px;
+  border-top: 1px solid var(--rule);
+}
+.scene-1 .meta-strip .meta-k {
+  font-family: var(--sans);
+  font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.scene-1 .meta-strip .meta-v {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 24, 'SOFT' 50;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 19px;
+  color: var(--ink);
+  margin-top: 4px;
+  letter-spacing: -0.005em;
+}
+.scene-1 .meta-strip .quote-rule {
+  border-left: 2px solid var(--rust);
+  padding-left: 24px;
+}
+.scene-1 .meta-strip .quote {
+  font-family: var(--display);
+  font-style: italic;
+  font-variation-settings: 'opsz' 36, 'SOFT' 100;
+  font-weight: 400;
+  font-size: 21px;
+  line-height: 1.35;
+  color: var(--ink-soft);
+  max-width: 38ch;
+}
+
+/* ============ CENA 02 — O NÚMERO ============ */
+.scene-2 .canvas { justify-content: center; }
+.scene-2 .stat-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 56px;
+  align-items: end;
+}
+.scene-2 .number-stack {
+  display: flex; flex-direction: column;
+  align-items: flex-start;
+  position: relative;
+}
+.scene-2 .number-stack .source-tag {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-muted);
+  letter-spacing: 0.04em;
+  margin-bottom: 12px;
+  border-left: 2px solid var(--rust);
+  padding-left: 10px;
+}
+.scene-2 .number-stack .gigant {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 144, 'SOFT' 0, 'WONK' 1;
+  font-weight: 800;
+  font-style: italic;
+  font-size: 260px;
+  line-height: 0.82;
+  letter-spacing: -0.055em;
+  color: var(--clinical-red);
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+  position: relative;
+}
+.scene-2 .number-stack .gigant::after {
+  /* a small mark next to the number */
+  content: '';
+  position: absolute;
+  right: -28px; top: 22px;
+  width: 12px; height: 12px;
+  background: var(--rust);
+  border-radius: 50%;
+  opacity: 0.85;
+}
+.scene-2 .number-stack .pct-bar {
+  display: flex; align-items: baseline;
+  gap: 12px; margin-top: 22px;
+}
+.scene-2 .number-stack .pct-bar .pct {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 36, 'SOFT' 0, 'WONK' 1;
+  font-weight: 700;
+  font-style: italic;
+  font-size: 38px;
+  color: var(--rust);
+  letter-spacing: -0.01em;
+}
+.scene-2 .number-stack .pct-bar .lbl {
+  font-family: var(--sans);
+  font-size: 11px; font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--ink-muted);
+  border-bottom: 1px solid var(--rule);
+  padding-bottom: 2px;
+}
+
+.scene-2 .editorial {
+  border-left: 4px solid var(--rust);
+  padding-left: 36px;
+  padding-bottom: 12px;
+}
+.scene-2 .editorial .ttl {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 96, 'SOFT' 50, 'WONK' 0;
+  font-weight: 400;
+  font-size: 44px;
+  line-height: 1.05;
+  letter-spacing: -0.018em;
+  color: var(--ink);
+  margin-bottom: 18px;
+}
+.scene-2 .editorial .ttl em {
+  font-style: italic;
+  font-variation-settings: 'opsz' 96, 'SOFT' 100, 'WONK' 1;
+  color: var(--rust);
+  font-weight: 500;
+}
+.scene-2 .editorial .ttl b {
+  font-weight: 600;
+  color: var(--blue-deep);
+  font-style: normal;
+}
+.scene-2 .editorial .body {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 24, 'SOFT' 50;
+  font-weight: 400;
+  font-size: 18px;
+  color: var(--ink-soft);
+  line-height: 1.5;
+  margin-bottom: 24px;
+  max-width: 44ch;
+}
+.scene-2 .editorial .citation {
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-muted);
+  letter-spacing: 0.02em;
+  padding-top: 14px;
+  border-top: 1px solid var(--rule);
+}
+.scene-2 .editorial .citation strong { color: var(--ink); font-weight: 700; }
+
+/* ============ CENA 03 — MAPA ============ */
+.scene-3 .canvas { display: flex; flex-direction: column; }
+.scene-3 .head { margin-bottom: 28px; }
+.scene-3 .head .ttl {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 96, 'SOFT' 50;
+  font-weight: 400;
+  font-size: 56px;
+  line-height: 1;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+}
+.scene-3 .head .ttl em {
+  font-style: italic;
+  color: var(--rust);
+  font-variation-settings: 'opsz' 96, 'SOFT' 100, 'WONK' 1;
+  font-weight: 500;
+}
+.scene-3 .grid {
+  display: grid;
+  grid-template-columns: 1.7fr 1fr;
+  gap: 40px;
+  flex: 1; min-height: 0;
+}
+.scene-3 .map-card {
+  background: var(--cream);
+  border: 1px solid var(--rule);
+  padding: 14px 18px;
+  display: flex; flex-direction: column;
+  position: relative;
+}
+.scene-3 .map-card .head-row {
+  display: flex; justify-content: space-between; align-items: baseline;
+  padding-bottom: 10px;
+  margin-bottom: 10px;
+  border-bottom: 1px solid var(--rule);
+}
+.scene-3 .map-card .head-row .a {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 18, 'SOFT' 50;
+  font-style: italic;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--ink);
+  letter-spacing: 0;
+}
+.scene-3 .map-card .head-row .b {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-muted);
+}
+.scene-3 svg.map { width: 100%; flex: 1; min-height: 0; }
+
+.scene-3 .map-card .legend {
+  display: flex; gap: 24px; padding-top: 10px;
+  border-top: 1px solid var(--rule);
+  margin-top: 10px;
+}
+.scene-3 .map-card .legend .it {
+  display: flex; align-items: center; gap: 8px;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-muted);
+  letter-spacing: 0.02em;
+}
+.scene-3 .map-card .legend .dot {
+  width: 12px; height: 12px; border-radius: 50%;
+  background: var(--clinical-red);
+  opacity: 0.45;
+  border: 1.5px solid var(--clinical-red);
+}
+.scene-3 .map-card .legend .dot.s { width: 7px; height: 7px; }
+.scene-3 .map-card .legend .dot.l { width: 18px; height: 18px; }
+.scene-3 .map-card .legend .scale {
+  margin-left: auto;
+  font-family: var(--sans);
+  font-size: 9.5px; font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.18em;
+  color: var(--ink-muted);
+}
+
+.scene-3 .data-card {
+  background: var(--cream);
+  border: 1px solid var(--rule);
+  padding: 22px 26px;
+  display: flex; flex-direction: column;
+}
+.scene-3 .data-card .h {
+  display: flex; align-items: baseline; gap: 10px;
+  padding-bottom: 14px;
+  margin-bottom: 8px;
+  border-bottom: 1px solid var(--rule);
+}
+.scene-3 .data-card .h .roman {
+  font-family: var(--display);
+  font-style: italic;
+  font-variation-settings: 'opsz' 24, 'SOFT' 50;
+  font-weight: 500;
+  font-size: 18px;
+  color: var(--rust);
+}
+.scene-3 .data-card .h .lbl {
+  font-family: var(--sans);
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink);
+}
+.scene-3 .data-card .row {
+  display: grid;
+  grid-template-columns: 24px 1fr auto;
+  gap: 14px; align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px dotted var(--rule);
+}
+.scene-3 .data-card .row:last-of-type { border-bottom: none; }
+.scene-3 .data-card .row .idx {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 18, 'SOFT' 0;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--clinical-red);
+  text-align: right;
+  line-height: 1;
+  font-feature-settings: 'onum' 1;
+}
+.scene-3 .data-card .row .nm-wrap {
+  display: flex; flex-direction: column; gap: 2px;
+}
+.scene-3 .data-card .row .nm {
+  font-family: var(--sans);
+  font-size: 14px; font-weight: 700;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+}
+.scene-3 .data-card .row .co {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-muted);
+  letter-spacing: 0;
+}
+.scene-3 .data-card .row .n {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 36, 'SOFT' 0, 'WONK' 1;
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--clinical-red);
+  letter-spacing: -0.015em;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+
+.scene-3 .data-card .total {
+  margin-top: 18px;
+  padding-top: 14px;
+  border-top: 2px solid var(--ink);
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.scene-3 .data-card .total .lb {
+  font-family: var(--sans);
+  font-size: 10px; font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.scene-3 .data-card .total .v {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 96, 'SOFT' 0;
+  font-weight: 700;
+  font-size: 38px;
+  color: var(--ink);
+  letter-spacing: -0.025em;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+  line-height: 1;
+}
+
+/* ============ CENA 04 — GARGALO ============ */
+.scene-4 .canvas {}
+.scene-4 .head { margin-bottom: 36px; }
+.scene-4 .head .ttl {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 96, 'SOFT' 50;
+  font-weight: 400;
+  font-size: 60px;
+  line-height: 1;
+  letter-spacing: -0.028em;
+  color: var(--ink);
+}
+.scene-4 .head .ttl em {
+  font-style: italic;
+  font-variation-settings: 'opsz' 96, 'SOFT' 100, 'WONK' 1;
+  color: var(--rust);
+  font-weight: 500;
+}
+
+.scene-4 .timeline {
+  display: grid;
+  grid-template-columns: 1fr 36px 1fr 36px 1fr;
+  gap: 4px;
+  align-items: stretch;
+  margin-bottom: 36px;
+}
+.scene-4 .station {
+  background: var(--cream);
+  border: 1px solid var(--rule);
+  padding: 24px 26px;
+  display: flex; flex-direction: column;
+  position: relative;
+}
+.scene-4 .station::before {
+  content: '';
+  position: absolute;
+  top: -1px; left: -1px; right: -1px;
+  height: 3px;
+  background: var(--ink);
+}
+.scene-4 .station.warn::before { background: var(--rust); }
+.scene-4 .station .top {
+  display: flex; align-items: baseline; justify-content: space-between;
+  margin-bottom: 14px;
+}
+.scene-4 .station .roman {
+  font-family: var(--display);
+  font-style: italic;
+  font-variation-settings: 'opsz' 18, 'SOFT' 50;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--rust);
+  letter-spacing: 0.02em;
+}
+.scene-4 .station .lbl {
+  font-family: var(--sans);
+  font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.scene-4 .station .name {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 36, 'SOFT' 50;
+  font-weight: 500;
+  font-size: 26px;
+  line-height: 1.1;
+  letter-spacing: -0.015em;
+  color: var(--ink);
+  margin-bottom: 10px;
+}
+.scene-4 .station .ds {
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--ink-soft);
+  line-height: 1.45;
+  max-width: 28ch;
+}
+.scene-4 .station .foot {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px dotted var(--rule);
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.scene-4 .station .foot .k {
+  font-family: var(--sans);
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.scene-4 .station .foot .v {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 24, 'SOFT' 50, 'WONK' 1;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--ink);
+  letter-spacing: -0.01em;
+}
+.scene-4 .station.warn .foot .v { color: var(--rust); }
+
+.scene-4 .arrow-mark {
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--display);
+  font-style: italic;
+  font-variation-settings: 'opsz' 36, 'SOFT' 100, 'WONK' 1;
+  font-weight: 400;
+  font-size: 30px;
+  color: var(--rust);
+}
+
+.scene-4 .conclusion {
+  padding-top: 32px;
+  border-top: 3px double var(--ink);
+  text-align: center;
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 96, 'SOFT' 50;
+  font-weight: 400;
+  font-size: 42px;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--ink);
+}
+.scene-4 .conclusion em {
+  font-style: italic;
+  font-variation-settings: 'opsz' 96, 'SOFT' 100, 'WONK' 1;
+  color: var(--rust);
+  font-weight: 500;
+}
+.scene-4 .conclusion .pilcrow {
+  font-family: var(--display);
+  font-style: italic;
+  color: var(--rust);
+  margin-right: 12px;
+  opacity: 0.7;
+}
+
+/* ============ CENA 05 — CAPTURA ============ */
+.scene-5 .canvas {}
+.scene-5 .head { margin-bottom: 26px; }
+.scene-5 .head .ttl {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 96, 'SOFT' 50;
+  font-weight: 400;
+  font-size: 54px;
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  max-width: 26ch;
+}
+.scene-5 .head .ttl em {
+  font-style: italic;
+  font-variation-settings: 'opsz' 96, 'SOFT' 100, 'WONK' 1;
+  color: var(--rust);
+  font-weight: 500;
+}
+.scene-5 .demo {
+  display: grid;
+  grid-template-columns: 1fr 50px 1fr;
+  gap: 14px;
+  flex: 1; min-height: 0;
+}
+.scene-5 .panel {
+  background: var(--cream);
+  border: 1px solid var(--rule);
+  display: flex; flex-direction: column;
+  overflow: hidden;
+  position: relative;
+}
+.scene-5 .panel .ph {
+  background: transparent;
+  padding: 14px 20px;
+  border-bottom: 1px solid var(--rule);
+  display: flex; justify-content: space-between; align-items: baseline;
+}
+.scene-5 .panel .ph .a {
+  font-family: var(--display);
+  font-style: italic;
+  font-variation-settings: 'opsz' 18, 'SOFT' 50;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--ink);
+}
+.scene-5 .panel .ph .b {
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-muted);
+  letter-spacing: 0.02em;
+}
+.scene-5 .panel .ph .badge {
+  font-family: var(--sans);
+  font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--paper);
+  background: var(--ink);
+  padding: 5px 10px;
+}
+.scene-5 .panel .pb { padding: 24px; flex: 1; display: flex; flex-direction: column; }
+
+.scene-5 .wa-bubble {
+  align-self: flex-start;
+  background: #dcf6c5;
+  padding: 18px 22px;
+  border-radius: 4px 14px 14px 14px;
+  font-family: var(--sans);
+  font-size: 17px;
+  color: var(--ink);
+  line-height: 1.5;
+  min-height: 130px;
+  max-width: 100%;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.08);
+  letter-spacing: -0.005em;
+}
+.scene-5 .wa-bubble .cursor {
+  display: inline-block;
+  width: 8px; height: 18px;
+  background: var(--ink);
+  vertical-align: text-bottom;
+  margin-left: 2px;
+  animation: blink 800ms infinite;
+}
+@keyframes blink { 50% { opacity: 0; } }
+
+.scene-5 .wa-meta {
+  margin-top: auto;
+  padding-top: 16px;
+  border-top: 1px dotted var(--rule);
+  display: flex; justify-content: space-between;
+  font-family: var(--mono);
+  font-size: 10px;
+  color: var(--ink-muted);
+}
+
+.scene-5 .json {
+  background: #18242f;
+  color: #d6e2ed;
+  padding: 22px 24px;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.85;
+  flex: 1;
+  font-feature-settings: 'liga' 0, 'calt' 1;
+}
+.scene-5 .json .k { color: #f6c891; }
+.scene-5 .json .s { color: #b8d3c4; }
+.scene-5 .json .p { color: #e89bb2; }
+.scene-5 .json .c { color: #677a8c; font-style: italic; }
+
+.scene-5 .arrow-col {
+  display: flex; align-items: center; justify-content: center;
+  position: relative;
+}
+.scene-5 .arrow-col::before {
+  content: ''; position: absolute;
+  left: 50%; top: 10%; bottom: 10%;
+  width: 1px; background: var(--rule);
+}
+.scene-5 .arrow-col .mark {
+  background: var(--paper);
+  width: 40px; height: 40px;
+  border: 1px solid var(--ink);
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-family: var(--display);
+  font-style: italic;
+  font-weight: 500;
+  font-size: 19px;
+  color: var(--rust);
+  position: relative;
+  z-index: 1;
+}
+
+.scene-5 .ribbon {
+  margin-top: 20px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+}
+.scene-5 .ribbon .fact {
+  padding: 16px 20px;
+  background: var(--cream);
+  display: flex; flex-direction: column; gap: 4px;
+}
+.scene-5 .ribbon .fact .k {
+  font-family: var(--sans);
+  font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.scene-5 .ribbon .fact .v {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 24, 'SOFT' 50;
+  font-style: italic;
+  font-weight: 600;
+  font-size: 22px;
+  color: var(--ink);
+  letter-spacing: -0.015em;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+.scene-5 .ribbon .fact .v small {
+  font-style: normal;
+  font-family: var(--sans);
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+
+/* ============ CENA 06 — LISTA PRIORIZADA ============ */
+.scene-6 .canvas {}
+.scene-6 .head { margin-bottom: 24px; }
+.scene-6 .head .ttl {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 96, 'SOFT' 50;
+  font-weight: 400;
+  font-size: 54px;
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  max-width: 24ch;
+}
+.scene-6 .head .ttl em {
+  font-style: italic;
+  font-variation-settings: 'opsz' 96, 'SOFT' 100, 'WONK' 1;
+  color: var(--rust);
+  font-weight: 500;
+}
+.scene-6 .ledger {
+  background: var(--cream);
+  border: 1px solid var(--rule);
+  flex: 1; min-height: 0;
+  display: flex; flex-direction: column;
+  overflow: hidden;
+}
+.scene-6 .ledger .thead {
+  display: grid;
+  grid-template-columns: 90px 70px 1fr 2fr 110px;
+  gap: 18px;
+  padding: 14px 28px;
+  border-bottom: 2px solid var(--ink);
+  background: var(--cream);
+}
+.scene-6 .ledger .thead span {
+  font-family: var(--sans);
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.scene-6 .ledger .thead .right { text-align: right; }
+.scene-6 .ledger .row {
+  display: grid;
+  grid-template-columns: 90px 70px 1fr 2fr 110px;
+  gap: 18px;
+  padding: 22px 28px;
+  border-bottom: 1px dotted var(--rule);
+  align-items: center;
+  position: relative;
+}
+.scene-6 .ledger .row::before {
+  content: '';
+  position: absolute;
+  left: 0; top: 0; bottom: 0;
+  width: 4px;
+  background: var(--clinical-red);
+}
+.scene-6 .ledger .row.amber::before { background: var(--clinical-amber); }
+.scene-6 .ledger .row .pos {
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--ink-muted);
+  letter-spacing: 0.02em;
+}
+.scene-6 .ledger .row .faixa {
+  font-family: var(--display);
+  font-style: italic;
+  font-variation-settings: 'opsz' 18, 'SOFT' 50, 'WONK' 0;
+  font-weight: 600;
+  font-size: 18px;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+  font-feature-settings: 'tnum' 0, 'onum' 1;
+}
+.scene-6 .ledger .row .who {
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--ink-soft);
+  font-weight: 500;
+}
+.scene-6 .ledger .row .who em {
+  font-style: italic;
+  color: var(--ink-muted);
+}
+.scene-6 .ledger .row .tags { display: flex; gap: 8px; flex-wrap: wrap; }
+.scene-6 .ledger .row .tag {
+  font-family: var(--sans);
+  font-size: 11px;
+  background: transparent;
+  border: 1px solid var(--ink);
+  padding: 3px 11px;
+  border-radius: 999px;
+  font-weight: 500;
+  color: var(--ink);
+  letter-spacing: 0.01em;
+}
+.scene-6 .ledger .row .score-cell {
+  text-align: right;
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 96, 'SOFT' 0, 'WONK' 1;
+  font-weight: 700;
+  font-size: 44px;
+  color: var(--clinical-red);
+  line-height: 1;
+  letter-spacing: -0.04em;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+.scene-6 .ledger .row.amber .score-cell { color: var(--clinical-amber); }
+.scene-6 .ledger .row .score-cell small {
+  display: block;
+  font-family: var(--sans);
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.2em;
+  color: var(--ink-muted);
+  margin-top: 3px;
+}
+
+.scene-6 .axes-strip {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 12px;
+}
+.scene-6 .axes-strip .axis {
+  background: var(--cream);
+  border: 1px solid var(--rule);
+  border-top: 3px solid var(--ink);
+  padding: 14px 18px;
+}
+.scene-6 .axes-strip .axis .roman {
+  font-family: var(--display);
+  font-style: italic;
+  font-variation-settings: 'opsz' 18, 'SOFT' 50;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--rust);
+}
+.scene-6 .axes-strip .axis .nm {
+  font-family: var(--sans);
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink);
+  margin-top: 2px;
+}
+.scene-6 .axes-strip .axis .ds {
+  font-family: var(--sans);
+  font-size: 11px;
+  color: var(--ink-muted);
+  margin-top: 2px;
+}
+
+/* ============ CENA 07 — EXPLORAÇÃO ============ */
+.scene-7 .canvas {}
+.scene-7 .head { margin-bottom: 24px; }
+.scene-7 .head .ttl {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 96, 'SOFT' 50;
+  font-weight: 400;
+  font-size: 54px;
+  line-height: 1.02;
+  letter-spacing: -0.025em;
+  color: var(--ink);
+  max-width: 28ch;
+}
+.scene-7 .head .ttl em {
+  font-style: italic;
+  font-variation-settings: 'opsz' 96, 'SOFT' 100, 'WONK' 1;
+  color: var(--rust);
+  font-weight: 500;
+}
+.scene-7 .console {
+  background: var(--cream);
+  border: 1px solid var(--rule);
+  overflow: hidden;
+}
+.scene-7 .console .topbar {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--rule);
+}
+.scene-7 .console .topbar .a {
+  font-family: var(--display);
+  font-style: italic;
+  font-variation-settings: 'opsz' 18, 'SOFT' 50;
+  font-weight: 500;
+  font-size: 14px;
+  color: var(--ink);
+}
+.scene-7 .console .topbar .b {
+  display: flex; align-items: center; gap: 10px;
+  font-family: var(--mono);
+  font-size: 11px;
+  color: var(--ink-muted);
+}
+.scene-7 .console .topbar .b .live {
+  display: inline-block;
+  width: 6px; height: 6px;
+  background: var(--moss);
+  border-radius: 50%;
+}
+.scene-7 .console .body {
+  padding: 30px 36px;
+  display: flex; flex-direction: column;
+  gap: 22px;
+}
+.scene-7 .question {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 48, 'SOFT' 50;
+  font-weight: 400;
+  font-style: italic;
+  font-size: 30px;
+  line-height: 1.2;
+  color: var(--ink);
+  letter-spacing: -0.018em;
+  position: relative;
+  padding-left: 28px;
+}
+.scene-7 .question::before {
+  content: '“';
+  position: absolute;
+  left: 0; top: -8px;
+  font-family: var(--display);
+  font-style: italic;
+  font-variation-settings: 'opsz' 144, 'SOFT' 100, 'WONK' 1;
+  font-weight: 700;
+  font-size: 56px;
+  color: var(--rust);
+  line-height: 1;
+}
+.scene-7 .toolcall {
+  font-family: var(--mono);
+  font-size: 13px;
+  color: var(--ink);
+  background: var(--paper-deep);
+  border-left: 3px solid var(--rust);
+  padding: 12px 18px;
+  letter-spacing: 0;
+}
+.scene-7 .toolcall .pf {
+  color: var(--rust);
+  font-weight: 700;
+  margin-right: 8px;
+}
+.scene-7 .answer {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 24, 'SOFT' 50;
+  font-weight: 400;
+  font-size: 20px;
+  color: var(--ink-soft);
+  line-height: 1.4;
+}
+.scene-7 .answer .big {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 96, 'SOFT' 0, 'WONK' 1;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 44px;
+  color: var(--clinical-red);
+  letter-spacing: -0.035em;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+  vertical-align: -3px;
+  margin: 0 4px;
+}
+.scene-7 .mini {
+  margin-top: 14px;
+  border: 1px solid var(--rule);
+  display: flex; flex-direction: column;
+}
+.scene-7 .mini-row {
+  display: grid;
+  grid-template-columns: 80px 1fr auto;
+  gap: 18px;
+  padding: 12px 22px;
+  align-items: center;
+  border-bottom: 1px dotted var(--rule);
+  background: var(--cream);
+}
+.scene-7 .mini-row:last-child { border-bottom: none; }
+.scene-7 .mini-row .id {
+  font-family: var(--mono);
+  font-size: 12px;
+  color: var(--ink-muted);
+}
+.scene-7 .mini-row .desc {
+  font-family: var(--sans);
+  font-size: 14px;
+  color: var(--ink);
+  font-weight: 500;
+}
+.scene-7 .mini-row .sc {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 36, 'SOFT' 0, 'WONK' 1;
+  font-style: italic;
+  font-weight: 700;
+  font-size: 22px;
+  color: var(--clinical-red);
+  letter-spacing: -0.02em;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+
+.scene-7 .infra {
+  margin-top: 16px;
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 12px;
+}
+.scene-7 .infra .item {
+  background: var(--cream);
+  border: 1px solid var(--rule);
+  padding: 14px 18px;
+}
+.scene-7 .infra .item .k {
+  font-family: var(--sans);
+  font-size: 9px; font-weight: 700;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.scene-7 .infra .item .v {
+  font-family: var(--display);
+  font-style: italic;
+  font-variation-settings: 'opsz' 24, 'SOFT' 50;
+  font-weight: 500;
+  font-size: 17px;
+  color: var(--ink);
+  letter-spacing: -0.005em;
+  margin-top: 4px;
+}
+.scene-7 .infra .item .v.mono {
+  font-family: var(--mono);
+  font-style: normal;
+  font-weight: 500;
+  font-size: 13px;
+  color: var(--ink);
+}
+
+/* ============ CENA 08 — IMPACTO ============ */
+.scene-8 .canvas {}
+.scene-8 .head { margin-bottom: 28px; }
+.scene-8 .head .ttl {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 96, 'SOFT' 50;
+  font-weight: 400;
+  font-size: 60px;
+  line-height: 1;
+  letter-spacing: -0.028em;
+  color: var(--ink);
+}
+.scene-8 .head .ttl em {
+  font-style: italic;
+  font-variation-settings: 'opsz' 96, 'SOFT' 100, 'WONK' 1;
+  color: var(--rust);
+  font-weight: 500;
+}
+.scene-8 .kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 1px;
+  background: var(--rule);
+  border: 1px solid var(--rule);
+  margin-bottom: 22px;
+}
+.scene-8 .kpi {
+  background: var(--cream);
+  padding: 30px 28px 26px;
+  display: flex; flex-direction: column;
+  position: relative;
+}
+.scene-8 .kpi .roman {
+  font-family: var(--display);
+  font-style: italic;
+  font-variation-settings: 'opsz' 18, 'SOFT' 50;
+  font-weight: 600;
+  font-size: 14px;
+  color: var(--rust);
+  margin-bottom: 6px;
+}
+.scene-8 .kpi .k {
+  font-family: var(--sans);
+  font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+  margin-bottom: 14px;
+  max-width: 22ch;
+}
+.scene-8 .kpi .v {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 144, 'SOFT' 0, 'WONK' 0;
+  font-weight: 700;
+  font-size: 76px;
+  color: var(--ink);
+  letter-spacing: -0.045em;
+  line-height: 0.9;
+  font-feature-settings: 'tnum' 1, 'lnum' 1;
+}
+.scene-8 .kpi .ds {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 18, 'SOFT' 50;
+  font-style: italic;
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--ink-soft);
+  margin-top: 16px;
+  line-height: 1.4;
+  max-width: 28ch;
+}
+
+.scene-8 .roadmap {
+  background: var(--cream);
+  border: 1px solid var(--rule);
+  border-left: 3px solid var(--rust);
+  padding: 20px 28px;
+  margin-bottom: 22px;
+}
+.scene-8 .roadmap .h {
+  display: flex; align-items: baseline; gap: 12px;
+  margin-bottom: 12px;
+}
+.scene-8 .roadmap .h .roman {
+  font-family: var(--display);
+  font-style: italic;
+  font-variation-settings: 'opsz' 24, 'SOFT' 100, 'WONK' 1;
+  font-weight: 500;
+  font-size: 17px;
+  color: var(--rust);
+}
+.scene-8 .roadmap .h .lbl {
+  font-family: var(--sans);
+  font-size: 9.5px; font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--ink-muted);
+}
+.scene-8 .roadmap .items {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 28px;
+}
+.scene-8 .roadmap .it { display: flex; flex-direction: column; gap: 4px; }
+.scene-8 .roadmap .it .nm {
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 24, 'SOFT' 50;
+  font-weight: 600;
+  font-size: 20px;
+  color: var(--ink);
+  letter-spacing: -0.015em;
+}
+.scene-8 .roadmap .it .ds {
+  font-family: var(--sans);
+  font-size: 13px;
+  color: var(--ink-soft);
+}
+
+.scene-8 .close {
+  padding-top: 26px;
+  border-top: 3px double var(--ink);
+  text-align: center;
+  font-family: var(--display);
+  font-variation-settings: 'opsz' 60, 'SOFT' 50;
+  font-weight: 400;
+  font-size: 32px;
+  line-height: 1.25;
+  letter-spacing: -0.018em;
+  color: var(--ink);
+}
+.scene-8 .close em {
+  font-style: italic;
+  font-variation-settings: 'opsz' 60, 'SOFT' 100, 'WONK' 1;
+  color: var(--rust);
+  font-weight: 500;
+}
+.scene-8 .close .pilcrow {
+  font-family: var(--display);
+  font-style: italic;
+  color: var(--rust);
+  margin-right: 10px;
+  opacity: 0.6;
+}
+
+/* ============ PROGRESS — minimal pill ============ */
+#progress {
+  position: fixed;
+  right: 28px; bottom: 56px;
+  display: flex;
+  background: var(--cream);
+  border: 1px solid var(--ink);
+  padding: 5px;
+  z-index: 100;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 200ms;
+  gap: 4px;
+}
+#progress.show { opacity: 1; pointer-events: auto; }
+#progress .dot {
+  width: 28px; height: 22px;
+  background: transparent;
+  color: var(--ink-muted);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 500;
+  border: none;
+  cursor: pointer;
+  user-select: none;
+}
+#progress .dot.active {
+  background: var(--ink);
+  color: var(--paper);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .scene, .anim { transition: opacity 100ms linear !important; transform: none !important; }
+  .gov-bar .pulse { animation: none !important; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============ CHROME INSTITUCIONAL ============ -->
+<div class="gov-bar">
+  <div class="left">
+    <span><span class="pulse"></span>Prefeitura · Rio de Janeiro</span>
+    <span class="sep">/</span>
+    <span>Secretaria Municipal de Saúde</span>
+    <span class="sep">/</span>
+    <span>Atenção Primária</span>
+  </div>
+  <div class="right">
+    <span>n = 97.938</span>
+    <span class="sep">·</span>
+    <span>Janela 2025–01 / 2025–12</span>
+    <span class="sep">·</span>
+    <span>Claude Impact Lab · Rio · 2026</span>
+  </div>
+</div>
+
+<header class="brand-bar">
+  <div class="crest">R</div>
+  <div class="org">
+    <span class="l1">SMS Rio  ·  Estratégia Saúde da Família</span>
+    <span class="l2">ACS Inteligente</span>
+  </div>
+  <div class="right-anchor">
+    <span class="meta">vol. I · pitch · 06min</span>
+    <span class="badge"><span class="star">§</span> Inteligência no Território</span>
+  </div>
+</header>
+
+<main id="stage">
+
+  <!-- ============ CENA 01 — ABERTURA ============ -->
+  <section class="scene scene-1" data-scene="1" data-label="Abertura">
+    <div class="folio">
+      <span class="roman">№ I</span>
+      <span class="rule"></span>
+      <span class="label">Prólogo</span>
+    </div>
+
+    <div class="canvas">
+      <div class="hero">
+        <div class="anim d1 eyebrow left">Atenção primária · Estratégia Saúde da Família</div>
+        <h1 class="anim d2">
+          <span class="drop">Seis</span> da manhã. Uma agente comunitária sai
+          para visitar <span class="nb">doze famílias</span>. Volta às treze
+          com doze anotações no caderno.
+        </h1>
+
+        <div class="anim d3 meta-strip">
+          <div>
+            <div class="meta-k">Ciclo atual</div>
+            <div class="meta-v">7 dias entre o campo e a decisão</div>
+          </div>
+          <div class="quote-rule">
+            <div class="quote">
+              “O que ela viu hoje só chega na reunião da equipe <em>na quarta da semana que vem</em>.”
+            </div>
+          </div>
+          <div style="text-align:right">
+            <div class="meta-k">Fonte</div>
+            <div class="meta-v">SMS Rio · Q&amp;A 2026</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CENA 02 — O NÚMERO ============ -->
+  <section class="scene scene-2" data-scene="2" data-label="Diagnóstico">
+    <div class="folio">
+      <span class="roman">№ II</span>
+      <span class="rule"></span>
+      <span class="label">Diagnóstico</span>
+    </div>
+
+    <div class="canvas">
+      <div class="anim d1 eyebrow left">O ponto cego da Atenção Primária</div>
+
+      <div class="stat-grid">
+        <div class="number-stack">
+          <div class="anim d2 source-tag">SMS Rio · 12 meses · cadastros únicos</div>
+          <div class="anim d2 gigant" id="counter-main">0</div>
+          <div class="anim d3 pct-bar">
+            <span class="pct">49,87%</span>
+            <span class="lbl">dos cadastros</span>
+          </div>
+        </div>
+
+        <div class="anim d4 editorial">
+          <div class="ttl">Metade do território é <em>invisível</em> para a equipe que deveria <b>cuidar dele</b>.</div>
+          <div class="body">
+            Nenhuma visita registrada em doze meses. Sem contato, sem coleta de sinais, sem priorização.
+            O dado existe, mas não chega ao olho clínico.
+          </div>
+          <div class="citation">
+            <strong>Fonte:</strong>  pacientes.parquet · visitas.parquet  ·  SMS Rio  ·  janela&nbsp;2025–01 a 2025–12  ·  n&nbsp;=&nbsp;97.938
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CENA 03 — MAPA ============ -->
+  <section class="scene scene-3" data-scene="3" data-label="Distribuição geográfica">
+    <div class="folio">
+      <span class="roman">№ III</span>
+      <span class="rule"></span>
+      <span class="label">Geografia</span>
+    </div>
+
+    <div class="canvas">
+      <div class="anim d1 head">
+        <div class="eyebrow left">Distribuição geográfica · top 8 clusters</div>
+        <div class="ttl">Onde os <em>quarenta e oito mil</em> moram.</div>
+      </div>
+
+      <div class="grid">
+        <div class="anim d2 map-card">
+          <div class="head-row">
+            <div class="a">Município do Rio de Janeiro · cadastros sem visita</div>
+            <div class="b">22°54′S · 43°15′W · esc. 1:200.000</div>
+          </div>
+
+          <svg class="map" viewBox="0 0 900 540" preserveAspectRatio="xMidYMid meet" id="map-rio">
+            <defs>
+              <pattern id="paper-grid" width="36" height="36" patternUnits="userSpaceOnUse">
+                <path d="M 36 0 L 0 0 0 36" fill="none" stroke="#e7ddca" stroke-width="0.6"/>
+              </pattern>
+              <pattern id="paper-grid-2" width="180" height="180" patternUnits="userSpaceOnUse">
+                <path d="M 180 0 L 0 0 0 180" fill="none" stroke="#c9bfae" stroke-width="0.8"/>
+              </pattern>
+              <linearGradient id="seaG" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#e9e1cf"/>
+                <stop offset="100%" stop-color="#d8cdb4"/>
+              </linearGradient>
+              <linearGradient id="landG" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="0%" stop-color="#fbf6eb"/>
+                <stop offset="100%" stop-color="#f1e8d3"/>
+              </linearGradient>
+            </defs>
+
+            <!-- sea background -->
+            <rect width="900" height="540" fill="url(#seaG)"/>
+            <rect width="900" height="540" fill="url(#paper-grid)"/>
+            <rect width="900" height="540" fill="url(#paper-grid-2)"/>
+
+            <!-- crosshair geográfico, sutil -->
+            <line x1="0" y1="270" x2="900" y2="270" stroke="#b8a98a" stroke-width="0.6" stroke-dasharray="1,5"/>
+            <line x1="450" y1="0" x2="450" y2="540" stroke="#b8a98a" stroke-width="0.6" stroke-dasharray="1,5"/>
+
+            <!-- silhueta município (oeste→leste, costa+baía) -->
+            <path d="M 60,320 L 102,298 L 140,302 L 180,282 L 218,266 L 252,253 L 290,244 L 332,239 L 376,235 L 418,232 L 458,225 L 496,218 L 532,206 L 568,196 L 602,194 L 638,200 L 670,218 L 690,244 L 700,272 L 706,302 L 706,332 L 696,360 L 678,384 L 650,402 L 616,414 L 578,420 L 538,422 L 496,424 L 454,425 L 412,422 L 372,418 L 332,412 L 292,404 L 254,394 L 220,386 L 188,374 L 162,358 L 138,340 L 116,328 L 88,322 Z"
+                  fill="url(#landG)" stroke="#7a6a4a" stroke-width="1.2" stroke-linejoin="round"/>
+
+            <!-- Lagoa Rodrigo de Freitas -->
+            <ellipse cx="528" cy="388" rx="20" ry="10" fill="url(#seaG)" stroke="#7a6a4a" stroke-width="0.8"/>
+
+            <!-- Baía da Guanabara -->
+            <path d="M 690,244 Q 750,266 768,318 Q 776,366 748,400 Q 728,418 706,414 L 700,360 L 706,332 L 706,302 L 700,272 Z"
+                  fill="url(#seaG)" stroke="#7a6a4a" stroke-width="0.8"/>
+
+            <!-- Ilha do Governador -->
+            <path d="M 718,272 L 748,262 L 762,280 L 754,300 L 728,300 Z"
+                  fill="url(#landG)" stroke="#7a6a4a" stroke-width="0.8"/>
+
+            <!-- Maciço da Tijuca — linha pontilhada de divisor -->
+            <path d="M 280,305 Q 340,295 400,300 Q 460,305 500,316 Q 530,326 540,344"
+                  fill="none" stroke="#9a8a68" stroke-width="0.8" stroke-dasharray="3,3"/>
+
+            <!-- Rótulos: serif italic editorial -->
+            <text x="190" y="330" font-family="Fraunces" font-style="italic" font-size="11" fill="#7a6a4a" font-weight="500" letter-spacing="0.5">Zona Oeste</text>
+            <text x="412" y="324" font-family="Fraunces" font-style="italic" font-size="12" fill="#7a6a4a" font-weight="600" letter-spacing="0.5">Centro / Maré</text>
+            <text x="494" y="408" font-family="Fraunces" font-style="italic" font-size="10" fill="#7a6a4a" font-weight="500" letter-spacing="0.5">Zona Sul</text>
+            <text x="720" y="336" font-family="Fraunces" font-style="italic" font-size="10" fill="#5b6a7d" font-weight="500" letter-spacing="0.5">Baía da Guanabara</text>
+
+            <!-- compass — pen rendering -->
+            <g transform="translate(842,46)">
+              <circle r="26" fill="#fbf6eb" stroke="#0e1b2a" stroke-width="0.8"/>
+              <path d="M 0,-18 L 4.5,0 L 0,18 L -4.5,0 Z" fill="#0e1b2a"/>
+              <path d="M 0,-18 L 4.5,0 L 0,0 Z" fill="#b8492e"/>
+              <text y="-30" text-anchor="middle" font-family="Fraunces" font-style="italic" font-size="11" font-weight="700" fill="#0e1b2a">N</text>
+              <text y="36" text-anchor="middle" font-family="JetBrains Mono" font-size="7" fill="#5b6a7d" letter-spacing="1">22°54′S</text>
+            </g>
+
+            <!-- scale bar -->
+            <g transform="translate(50,498)">
+              <line x1="0" y1="0" x2="90" y2="0" stroke="#0e1b2a" stroke-width="1.4"/>
+              <line x1="0" y1="-5" x2="0" y2="5" stroke="#0e1b2a" stroke-width="1.4"/>
+              <line x1="45" y1="-4" x2="45" y2="4" stroke="#0e1b2a" stroke-width="1.2"/>
+              <line x1="90" y1="-5" x2="90" y2="5" stroke="#0e1b2a" stroke-width="1.4"/>
+              <text x="0"  y="18" font-family="JetBrains Mono" font-size="9" fill="#0e1b2a">0</text>
+              <text x="45" y="18" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#0e1b2a">5</text>
+              <text x="90" y="18" text-anchor="middle" font-family="JetBrains Mono" font-size="9" fill="#0e1b2a">10 km</text>
+            </g>
+
+            <!-- coordinate box -->
+            <g transform="translate(40,30)">
+              <rect width="170" height="46" fill="#fbf6eb" stroke="#0e1b2a" stroke-width="0.8"/>
+              <text x="10" y="15" font-family="Cera Pro" font-size="8.5" fill="#0e1b2a" font-weight="700" letter-spacing="2">SISTEMA DE COORDENADAS</text>
+              <text x="10" y="29" font-family="JetBrains Mono" font-size="10" fill="#0e1b2a">WGS 84 · EPSG:4326</text>
+              <text x="10" y="41" font-family="JetBrains Mono" font-size="9" fill="#5b6a7d">grid ≈ 500m · n=8 clusters</text>
+            </g>
+
+            <!-- numbered cluster points injected by JS -->
+            <g id="map-points"></g>
+          </svg>
+
+          <div class="legend">
+            <div class="it"><span class="dot s"></span>≈ 1.000</div>
+            <div class="it"><span class="dot"></span>≈ 1.500</div>
+            <div class="it"><span class="dot l"></span>1.800+</div>
+            <div class="scale" style="margin-left:auto">cluster · grid 500m</div>
+          </div>
+        </div>
+
+        <div class="anim d3 data-card">
+          <div class="h">
+            <span class="roman">i.</span>
+            <span class="lbl">Top 5 clusters críticos</span>
+          </div>
+          <div id="map-list"></div>
+          <div class="total">
+            <span class="lb">Top 8 concentram</span>
+            <span class="v" id="map-total">0</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CENA 04 — GARGALO ============ -->
+  <section class="scene scene-4" data-scene="4" data-label="Diagnóstico de processo">
+    <div class="folio">
+      <span class="roman">№ IV</span>
+      <span class="rule"></span>
+      <span class="label">Processo</span>
+    </div>
+
+    <div class="canvas">
+      <div class="anim d1 head">
+        <div class="eyebrow left">Análise de processo · ciclo atual</div>
+        <div class="ttl">O problema não é o trabalho. É <em>onde os dados moram</em>.</div>
+      </div>
+
+      <div class="timeline">
+        <div class="anim d2 station">
+          <div class="top">
+            <span class="roman">i.</span>
+            <span class="lbl">Etapa 01</span>
+          </div>
+          <div class="name">Caderno do ACS</div>
+          <div class="ds">Anotação manuscrita durante a visita. Conhecimento tácito retido em papel.</div>
+          <div class="foot"><span class="k">Latência</span><span class="v">imediata</span></div>
+        </div>
+
+        <div class="anim d2 arrow-mark">→</div>
+
+        <div class="anim d3 station">
+          <div class="top">
+            <span class="roman">ii.</span>
+            <span class="lbl">Etapa 02</span>
+          </div>
+          <div class="name">Reunião semanal da equipe</div>
+          <div class="ds">Médica, enfermeira e ACS discutem casos a partir da memória do campo.</div>
+          <div class="foot"><span class="k">Latência</span><span class="v">até 7 dias</span></div>
+        </div>
+
+        <div class="anim d3 arrow-mark">→</div>
+
+        <div class="anim d4 station warn">
+          <div class="top">
+            <span class="roman">iii.</span>
+            <span class="lbl">Etapa 03</span>
+          </div>
+          <div class="name">Sistema (Vitacare)</div>
+          <div class="ds">Lançamento posterior, parcial. A captura tácita não chega ao prontuário.</div>
+          <div class="foot"><span class="k">Latência</span><span class="v">dias / semanas</span></div>
+        </div>
+      </div>
+
+      <div class="anim d5 conclusion">
+        <span class="pilcrow">¶</span>A solução não cria trabalho novo. Ela liga as três etapas em <em>tempo real</em>.
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CENA 05 — CAPTURA ============ -->
+  <section class="scene scene-5" data-scene="5" data-label="Plano i · captura">
+    <div class="folio">
+      <span class="roman">№ V</span>
+      <span class="rule"></span>
+      <span class="label">Plano i · captura</span>
+    </div>
+
+    <div class="canvas">
+      <div class="anim d1 head">
+        <div class="eyebrow left">Plano i · captura no campo</div>
+        <div class="ttl">WhatsApp do ACS → <em>JSON estruturado</em>, em 1,2 segundos.</div>
+      </div>
+
+      <div class="demo">
+        <div class="anim d2 panel">
+          <div class="ph">
+            <span class="a">Mensagem recebida · ACS</span>
+            <span class="b">15:42 · /webhook/whatsapp</span>
+          </div>
+          <div class="pb">
+            <div class="wa-bubble"><span id="wa-text"></span><span class="cursor" id="wa-cursor"></span></div>
+            <div class="wa-meta">
+              <span>Twilio Sandbox · whatsapp:+14155238886</span>
+              <span>POST</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="anim d3 arrow-col">
+          <div class="mark">→</div>
+        </div>
+
+        <div class="anim d3 panel">
+          <div class="ph">
+            <span class="a">Extração estruturada</span>
+            <span class="badge">Claude · Haiku 4.5</span>
+          </div>
+          <div class="json" id="json-out"><span class="c">// aguardando ingestão…</span></div>
+        </div>
+      </div>
+
+      <div class="anim d4 ribbon">
+        <div class="fact"><div class="k">Canal</div><div class="v">WhatsApp <small>· já é do ACS</small></div></div>
+        <div class="fact"><div class="k">Modelo</div><div class="v">Haiku 4.5</div></div>
+        <div class="fact"><div class="k">Latência</div><div class="v">≈ 1,2 s</div></div>
+        <div class="fact"><div class="k">Treinamento</div><div class="v">Zero</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CENA 06 — LISTA PRIORIZADA ============ -->
+  <section class="scene scene-6" data-scene="6" data-label="Plano ii · decisão">
+    <div class="folio">
+      <span class="roman">№ VI</span>
+      <span class="rule"></span>
+      <span class="label">Plano ii · decisão</span>
+    </div>
+
+    <div class="canvas">
+      <div class="anim d1 head">
+        <div class="eyebrow left">Plano ii · reunião semanal apoiada por score</div>
+        <div class="ttl">A equipe decide com uma lista <em>já priorizada</em>.</div>
+      </div>
+
+      <div class="ledger">
+        <div class="thead">
+          <span>Posição</span>
+          <span>Faixa</span>
+          <span>Perfil</span>
+          <span>Condições clínicas</span>
+          <span class="right">Score</span>
+        </div>
+        <div id="patient-list"></div>
+      </div>
+
+      <div class="anim d5 axes-strip" style="transition-delay:1300ms">
+        <div class="axis"><div class="roman">i.</div><div class="nm">Clínico</div><div class="ds">comorbidades, condições crônicas</div></div>
+        <div class="axis"><div class="roman">ii.</div><div class="nm">Social</div><div class="ds">vulnerabilidade declarada</div></div>
+        <div class="axis"><div class="roman">iii.</div><div class="nm">Temporal</div><div class="ds">ausência de visita</div></div>
+        <div class="axis"><div class="roman">iv.</div><div class="nm">Gatilho</div><div class="ds">evento clínico recente</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CENA 07 — EXPLORAÇÃO ============ -->
+  <section class="scene scene-7" data-scene="7" data-label="Plano iii · exploração">
+    <div class="folio">
+      <span class="roman">№ VII</span>
+      <span class="rule"></span>
+      <span class="label">Plano iii · exploração</span>
+    </div>
+
+    <div class="canvas">
+      <div class="anim d1 head">
+        <div class="eyebrow left">Plano iii · pergunta em linguagem natural</div>
+        <div class="ttl">Claude responde com <em>SQL real</em> sobre o banco da equipe.</div>
+      </div>
+
+      <div class="anim d2 console">
+        <div class="topbar">
+          <div class="a">Chat IA · sessão da reunião</div>
+          <div class="b"><span class="live"></span>Claude Sonnet 4.6 · 4 tools read-only</div>
+        </div>
+        <div class="body">
+          <div class="question" id="chat-q"></div>
+          <div class="toolcall"><span class="pf">tool_call ›</span><span id="chat-tool"></span></div>
+          <div class="answer">
+            Encontrei <span class="big" id="chat-n">0</span> idosos. Os três casos mais críticos por score:
+            <div class="mini">
+              <div class="mini-row"><span class="id">P-001</span><span class="desc">66+ · Masculino · hipertenso, diabético, vulnerável</span><span class="sc">98</span></div>
+              <div class="mini-row"><span class="id">P-005</span><span class="desc">66+ · Feminino · hipertensa, diabética, vulnerável</span><span class="sc">84</span></div>
+              <div class="mini-row"><span class="id">P-007</span><span class="desc">66+ · Masculino · hipertenso, vulnerável</span><span class="sc">79</span></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="anim d5 infra" style="transition-delay:1100ms">
+        <div class="item"><div class="k">Tools disponíveis</div><div class="v mono">query_patients · query_alerts · query_kpis · query_group_stats</div></div>
+        <div class="item"><div class="k">Permissão</div><div class="v">Somente leitura</div></div>
+        <div class="item"><div class="k">Latência média</div><div class="v">≈ 2,1 s</div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ CENA 08 — IMPACTO ============ -->
+  <section class="scene scene-8" data-scene="8" data-label="Impacto · roadmap">
+    <div class="folio">
+      <span class="roman">№ VIII</span>
+      <span class="rule"></span>
+      <span class="label">Impacto · epílogo</span>
+    </div>
+
+    <div class="canvas">
+      <div class="anim d1 head">
+        <div class="eyebrow left">Impacto direto · dados que a SMS já possui</div>
+        <div class="ttl">A reorganização do trabalho que <em>já é feito</em>.</div>
+      </div>
+
+      <div class="kpi-grid">
+        <div class="anim d2 kpi">
+          <div class="roman">i.</div>
+          <div class="k">Cadastros invisíveis</div>
+          <div class="v">48.838</div>
+          <div class="ds">passam a ser priorizáveis na reunião</div>
+        </div>
+        <div class="anim d3 kpi">
+          <div class="roman">ii.</div>
+          <div class="k">Idosos 66+ sem visita</div>
+          <div class="v">12.636</div>
+          <div class="ds">entram no topo da lista de score</div>
+        </div>
+        <div class="anim d4 kpi">
+          <div class="roman">iii.</div>
+          <div class="k">Hipertensos sem visita</div>
+          <div class="v">5.689</div>
+          <div class="ds">com risco clínico mapeado</div>
+        </div>
+        <div class="anim d5 kpi">
+          <div class="roman">iv.</div>
+          <div class="k">Equipes ESF</div>
+          <div class="v">49</div>
+          <div class="ds">uma única ferramenta para todas</div>
+        </div>
+      </div>
+
+      <div class="anim d5 roadmap" style="transition-delay:1100ms">
+        <div class="h">
+          <span class="roman">§ próximas fases</span>
+          <span class="lbl">roadmap</span>
+        </div>
+        <div class="items">
+          <div class="it"><span class="nm">Áudio no WhatsApp</span><span class="ds">voice note via Whisper, mesmo canal</span></div>
+          <div class="it"><span class="nm">Família como entidade</span><span class="ds">confirmação pelo ACS em campo</span></div>
+          <div class="it"><span class="nm">Integração Vitacare</span><span class="ds">export / import com o prontuário oficial</span></div>
+        </div>
+      </div>
+
+      <div class="anim d6 close" style="transition-delay:1400ms">
+        <span class="pilcrow">¶</span>Não cria trabalho novo. <em>Reorganiza o trabalho que já é feito.</em>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="foot-bar">
+  <div class="scene-tag">
+    <span class="num" id="foot-num">i</span>
+    <span class="of">de viii</span>
+    <span class="lbl" id="foot-label">Abertura</span>
+  </div>
+  <div class="meta">
+    <span><span class="k">dataset</span><span class="v">SMS Rio · 2025</span></span>
+    <span><span class="k">stack</span><span class="v">Claude · Hono · Supabase</span></span>
+    <span><span class="k">build</span><span class="v">2026·05</span></span>
+  </div>
+</footer>
+
+<nav id="progress" aria-hidden="true"></nav>
+
+<script>
+(() => {
+  'use strict';
+
+  const DATA   = JSON.parse(document.getElementById('pitch-data').textContent);
+  const SCENES = Array.from(document.querySelectorAll('.scene'));
+  const TOTAL  = SCENES.length;
+
+  let current = 0;
+  const entered = new Set();
+
+  const footNum   = document.getElementById('foot-num');
+  const footLabel = document.getElementById('foot-label');
+
+  const roman = ['i','ii','iii','iv','v','vi','vii','viii','ix','x'];
+
+  function updateFooter() {
+    footNum.textContent = roman[current];
+    footLabel.textContent = SCENES[current].dataset.label || '';
+  }
+
+  function go(n) {
+    n = Math.max(0, Math.min(TOTAL - 1, n));
+    if (n === current) return;
+    const old = SCENES[current];
+    const next = SCENES[n];
+    old.classList.remove('active');
+    old.classList.add('exit-left');
+    next.classList.remove('exit-left');
+    next.classList.add('active');
+    current = n;
+    updateProgress();
+    updateFooter();
+    if (!entered.has(n)) {
+      entered.add(n);
+      setTimeout(() => enterScene(n + 1), 240);
+    }
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); go(current + 1); }
+    else if (e.key === 'ArrowLeft' || e.key === 'PageUp') { e.preventDefault(); go(current - 1); }
+    else if (e.key === 'Home') { e.preventDefault(); go(0); }
+    else if (e.key === 'End')  { e.preventDefault(); go(TOTAL - 1); }
+    else if (e.key === 'Escape') { e.preventDefault(); document.getElementById('progress').classList.toggle('show'); }
+  });
+
+  // Progress dots
+  const progressEl = document.getElementById('progress');
+  for (let i = 0; i < TOTAL; i++) {
+    const d = document.createElement('button');
+    d.className = 'dot';
+    d.textContent = roman[i];
+    d.addEventListener('click', () => go(i));
+    progressEl.appendChild(d);
+  }
+  function updateProgress() {
+    progressEl.querySelectorAll('.dot').forEach((d, i) => d.classList.toggle('active', i === current));
+  }
+
+  function enterScene(n) {
+    if (n === 2) animateCounter();
+    if (n === 3) animateMap();
+    if (n === 5) animateCapture();
+    if (n === 6) renderPatientList();
+    if (n === 7) animateChat();
+  }
+
+  // -------- Cena 02 --------
+  function animateCounter() {
+    const el = document.getElementById('counter-main');
+    if (!el) return;
+    const target = DATA.totals.sem_visita_12m;
+    const dur = 1900;
+    const start = performance.now();
+    function tick(t) {
+      const p = Math.min(1, (t - start) / dur);
+      const e = 1 - Math.pow(1 - p, 3);
+      el.textContent = Math.round(target * e).toLocaleString('pt-BR');
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  }
+
+  // -------- Cena 03 --------
+  function animateMap() {
+    const g = document.getElementById('map-points');
+    if (!g || g.children.length > 0) return;
+
+    const points = DATA.territorio_top;
+    const total = points.reduce((s, p) => s + p.count, 0);
+
+    const latMin = -22.95, latMax = -22.90;
+    const lngMin = -43.27, lngMax = -43.24;
+    const xC = 462, yC = 310;
+    const xRange = 105, yRange = 60;
+    const maxCount = Math.max(...points.map(p => p.count));
+
+    points.forEach((pt, i) => {
+      const nx = (pt.lng - lngMin) / (lngMax - lngMin);
+      const ny = (pt.lat - latMin) / (latMax - latMin);
+      const x = xC + (nx - 0.5) * xRange;
+      const y = yC + (ny - 0.5) * yRange;
+      const r = 6 + (pt.count / maxCount) * 16;
+
+      const halo = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      halo.setAttribute('cx', x); halo.setAttribute('cy', y);
+      halo.setAttribute('r', 0);
+      halo.setAttribute('fill', '#a4252b');
+      halo.setAttribute('fill-opacity', '0.08');
+      halo.style.transition = 'r 800ms cubic-bezier(.22,.61,.36,1)';
+      g.appendChild(halo);
+
+      const c = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+      c.setAttribute('cx', x); c.setAttribute('cy', y);
+      c.setAttribute('r', 0);
+      c.setAttribute('fill', '#a4252b');
+      c.setAttribute('fill-opacity', '0.5');
+      c.setAttribute('stroke', '#a4252b');
+      c.setAttribute('stroke-width', '1.5');
+      c.style.transition = 'r 600ms cubic-bezier(.22,.61,.36,1)';
+      g.appendChild(c);
+
+      const lbl = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+      lbl.setAttribute('x', x); lbl.setAttribute('y', y + 4);
+      lbl.setAttribute('text-anchor', 'middle');
+      lbl.setAttribute('font-family', 'Fraunces, serif');
+      lbl.setAttribute('font-style', 'italic');
+      lbl.setAttribute('font-size', '11');
+      lbl.setAttribute('font-weight', '700');
+      lbl.setAttribute('fill', '#fbf6eb');
+      lbl.style.opacity = '0';
+      lbl.style.transition = 'opacity 300ms';
+      lbl.textContent = i + 1;
+      g.appendChild(lbl);
+
+      setTimeout(() => {
+        halo.setAttribute('r', r + 10);
+        c.setAttribute('r', r);
+      }, 250 + i * 90);
+      setTimeout(() => { lbl.style.opacity = '1'; }, 700 + i * 90);
+    });
+
+    const list = document.getElementById('map-list');
+    list.innerHTML = '';
+    const cityNames = ['Centro / Maré', 'Centro / Maré', 'Penha · São Cristóvão', 'Penha · São Cristóvão', 'Centro / Maré'];
+    points.slice(0, 5).forEach((p, i) => {
+      const row = document.createElement('div');
+      row.className = 'row';
+      row.style.opacity = '0';
+      row.style.transition = 'opacity 500ms';
+      row.innerHTML = `
+        <span class="idx">${roman[i]}.</span>
+        <span class="nm-wrap">
+          <span class="nm">${cityNames[i]}</span>
+          <span class="co">${p.lat.toFixed(3)} · ${p.lng.toFixed(3)}</span>
+        </span>
+        <span class="n">${p.count.toLocaleString('pt-BR')}</span>`;
+      list.appendChild(row);
+      setTimeout(() => row.style.opacity = '1', 600 + i * 120);
+    });
+
+    const tot = document.getElementById('map-total');
+    const dur = 1100;
+    const t0 = performance.now();
+    function tickTot(t) {
+      const p = Math.min(1, (t - t0) / dur);
+      const e = 1 - Math.pow(1 - p, 3);
+      tot.textContent = Math.round(total * e).toLocaleString('pt-BR');
+      if (p < 1) requestAnimationFrame(tickTot);
+    }
+    setTimeout(() => requestAnimationFrame(tickTot), 1400);
+  }
+
+  // -------- Cena 05 --------
+  function animateCapture() {
+    const waText  = document.getElementById('wa-text');
+    const cursor  = document.getElementById('wa-cursor');
+    const jsonOut = document.getElementById('json-out');
+    if (!waText || waText.dataset.done === '1') return;
+    waText.dataset.done = '1';
+
+    const text = DATA.exemplo_extracao.input_whatsapp;
+    const json = DATA.exemplo_extracao.output_json;
+
+    let i = 0;
+    function type() {
+      if (i <= text.length) {
+        waText.textContent = text.slice(0, i);
+        i += 3;
+        setTimeout(type, 14);
+      } else {
+        waText.textContent = text;
+        cursor.style.display = 'none';
+        setTimeout(showJson, 220);
+      }
+    }
+    function showJson() {
+      const lines = [
+        '{',
+        `  <span class="k">"paciente"</span>:  <span class="s">"${json.paciente}"</span>,`,
+        `  <span class="k">"sintomas"</span>:  [<span class="s">"${json.sintomas[0]}"</span>],`,
+        `  <span class="k">"pressao"</span>:   <span class="s">"${json.pressao}"</span>,`,
+        `  <span class="k">"gravidade"</span>: <span class="p">"${json.gravidade}"</span>,`,
+        `  <span class="k">"acao"</span>:      <span class="s">"${json.acao}"</span>`,
+        '}'
+      ];
+      jsonOut.innerHTML = '';
+      lines.forEach((ln, idx) => {
+        const div = document.createElement('div');
+        div.innerHTML = ln;
+        div.style.opacity = '0';
+        div.style.transition = 'opacity 250ms';
+        jsonOut.appendChild(div);
+        setTimeout(() => div.style.opacity = '1', idx * 120);
+      });
+    }
+    setTimeout(type, 260);
+  }
+
+  // -------- Cena 06 --------
+  function renderPatientList() {
+    const list = document.getElementById('patient-list');
+    if (!list || list.children.length > 0) return;
+
+    DATA.top_pacientes.forEach((p, i) => {
+      const row = document.createElement('div');
+      row.className = 'row' + (p.score >= 90 ? '' : ' amber');
+      row.style.opacity = '0';
+      row.style.transform = 'translateX(-10px)';
+      row.style.transition = 'opacity 480ms, transform 480ms';
+      row.innerHTML = `
+        <div class="pos">${p.id}</div>
+        <div class="faixa">${p.faixa_etaria}</div>
+        <div class="who">${p.sexo} <em>· ${p.faixa_etaria === '66+' ? 'idoso' : 'adulto'}</em></div>
+        <div class="tags">${p.tags.map(t => `<span class="tag">${t}</span>`).join('')}</div>
+        <div class="score-cell">${p.score}<small>score</small></div>`;
+      list.appendChild(row);
+      setTimeout(() => {
+        row.style.opacity = '1';
+        row.style.transform = 'translateX(0)';
+      }, 280 + i * 130);
+    });
+  }
+
+  // -------- Cena 07 --------
+  function animateChat() {
+    const q = document.getElementById('chat-q');
+    const tool = document.getElementById('chat-tool');
+    const n = document.getElementById('chat-n');
+    if (!q || q.dataset.done === '1') return;
+    q.dataset.done = '1';
+
+    q.textContent    = DATA.exemplo_chat.pergunta;
+    tool.textContent = DATA.exemplo_chat.tool_call;
+
+    const target = DATA.exemplo_chat.resposta_total;
+    const dur = 1000;
+    const start = performance.now();
+    function tick(t) {
+      const p = Math.min(1, (t - start) / dur);
+      const e = 1 - Math.pow(1 - p, 3);
+      n.textContent = Math.round(target * e);
+      if (p < 1) requestAnimationFrame(tick);
+    }
+    setTimeout(() => requestAnimationFrame(tick), 1200);
+  }
+
+  // INIT
+  SCENES[0].classList.add('active');
+  entered.add(0);
+  updateProgress();
+  updateFooter();
+})();
+</script>
+</body>
+</html>
