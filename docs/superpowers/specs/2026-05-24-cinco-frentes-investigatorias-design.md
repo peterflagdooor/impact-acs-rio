@@ -4,6 +4,11 @@
 **Origem:** Capítulo 10 ("Próximos passos analíticos") do documento `docs/analise-completa-dataset-saude.md`. Peter aprovou executar todas as 5 frentes nesta rodada.
 **Stakeholder:** Peter Flag (Claude Impact Lab 2026 — hackathon SMS Rio).
 
+**Relação com o MVP do produto (trilho paralelo):**
+Existe em paralelo a este trilho analítico um MVP funcional do produto, já implementado (commits `feae6cf` em diante): backend Hono+TS com scoring engine, frontend Next.js institucional, dashboard com heatmap Leaflet + ORS isochrones, chat IA, Twilio webhook. Specs em `docs/superpowers/specs/2026-05-24-mvp-acs-design.md` e plan em `plans/2026-05-24-mvp-acs-implementation.md`. **Estes dois trilhos não se sobrepõem em código** — o MVP é o produto rodando; este spec é deep-dive analítico em Python pra alimentar números do pitch e fechar o ciclo de EDA. Os outputs podem cruzar (ex.: score do MVP em TS vs score aditivo em Python desta spec — comparação intencional para validar implementação do MVP).
+
+**ORS_API_KEY:** vive em `src/backend/.env` (não na raiz). Scripts Python desta spec carregam via `dotenv` apontando para esse caminho (`load_dotenv("src/backend/.env")`).
+
 ---
 
 ## 1. Contexto e objetivos
@@ -56,10 +61,9 @@ Adicionar ao `requirements.txt`:
 
 ### 2.3 Credenciais
 
-- `ORS_API_KEY` salvo em `.env` raiz (gitignored, já verificado).
-- `.env.example` atualizado com placeholder.
-- Scripts Python carregam via `python-dotenv` (`load_dotenv()` no topo).
-- Backend Node (futuro) usa a mesma var quando montar o proxy do mapa.
+- `ORS_API_KEY` vive em **`src/backend/.env`** (gitignored). Backend Node já usa a chave server-side em `/api/territory/isochrones` (commit `fd25406`).
+- `.env.example` consolidado na raiz tem referência; cada subapp tem seu próprio `.env.example`.
+- Scripts Python desta spec carregam via `python-dotenv` apontando explicitamente: `load_dotenv("src/backend/.env")`.
 - **Nunca** expor via `NEXT_PUBLIC_*` — backend faz proxy.
 
 ### 2.4 Premissas comuns aos scripts
@@ -207,10 +211,12 @@ Colunas: `semana`, `cenario` (baseline/turno_reservado), `n_familias_cobertas`, 
 
 ---
 
-## 6. Frente 4 — Heatmap geográfico
+## 6. Frente 4 — Heatmap geográfico (Folium standalone)
 
 ### Objetivo
 Visualizar geograficamente as concentrações de urgência (4 equipes hotspot, célula de 220 urgências em 100m). Servir de prova visual no pitch e base pra overlay futuro de microáreas.
+
+**Diferença vs heatmap do MVP:** o MVP TS já tem `frontend/components/heatmap-map.tsx` (Leaflet dentro do Next, commit `fd25406`). Este aqui é diferente: **artefato standalone** em HTML autocontido, com mais camadas (incluindo "nunca visitados"), pensado para o doc final / anexo de pitch / inspeção offline — não para rodar dentro do app. Implementações independentes; o trilho Python não toca em `src/frontend/`.
 
 ### Script: `scripts/heatmap_geografico.py`
 

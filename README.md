@@ -35,7 +35,7 @@ ACS no campo ──► WhatsApp ──► Twilio Sandbox ──► ngrok webhook
                                                   Claude Haiku 4.5 (extração estruturada)
                                                                       │
                                                                       ▼
-                                                              SQLite (db.sqlite)
+                                                          Supabase Postgres
                                                                       │
                                             ┌────── score recompute por paciente ──────┐
                                             ▼                                            ▼
@@ -50,11 +50,12 @@ ACS no campo ──► WhatsApp ──► Twilio Sandbox ──► ngrok webhook
 
 **Stack:**
 - Frontend: Next.js 16 (App Router) + Tailwind v4 + Cera Pro + Leaflet + brand institucional Prefeitura Rio
-- Backend: Node 20 + TypeScript + Hono + better-sqlite3
+- Backend: Node 20 + TypeScript + Hono + `postgres` (porsager)
+- Banco: Supabase Postgres (`Hackaton-Claude-Impact`, us-east-1) — schema versionado em `supabase/migrations/`
 - IA: Anthropic Claude (Sonnet 4.6 + Haiku 4.5) via `@anthropic-ai/sdk`
 - WhatsApp: Twilio SDK direto (sandbox)
 - Mapa: Leaflet + OpenStreetMap + ORS isochrones (proxy backend)
-- Dados: 4 Parquets anonimizados (SMS Rio) → SQLite via Python ETL
+- Dados originais: 4 Parquets anonimizados (SMS Rio) carregados no Supabase
 
 ## Como rodar localmente
 
@@ -63,18 +64,13 @@ ACS no campo ──► WhatsApp ──► Twilio Sandbox ──► ngrok webhook
 git clone https://github.com/peterflagdooor/impact-acs-rio.git
 cd impact-acs-rio
 
-# 2. Configurar .env (copiar template e preencher)
-cp .env.example .env
-# editar .env com:
-#   ANTHROPIC_API_KEY=sk-ant-...
-#   TWILIO_ACCOUNT_SID=AC...
-#   TWILIO_AUTH_TOKEN=...
-#   ORS_API_KEY=...
+# 2. Configurar .env por subapp (copiar templates e preencher com credenciais reais)
+cp src/backend/.env.example  src/backend/.env       # ANTHROPIC + TWILIO + ORS + DATABASE_URL (Supabase)
+cp src/frontend/.env.example src/frontend/.env.local
 
-# 3. Gerar db.sqlite a partir dos Parquets
-python3 -m venv .venv && source .venv/bin/activate
-pip install -r requirements.txt
-python scripts/seed_sqlite.py
+# 3. Aplicar schema no Supabase (ver supabase/migrations/)
+supabase link --project-ref <seu-project-ref>
+supabase db push
 
 # 4. Backend (porta 3001)
 cd src/backend && npm install && npm run dev &
@@ -86,6 +82,8 @@ cd ../frontend && npm install && npm run dev &
 ngrok http 3001
 # atualizar Twilio Console → Sandbox webhook URL pra https://<id>.ngrok.io/webhook/whatsapp
 ```
+
+> **Sobre os dados:** o schema está versionado em `supabase/migrations/`. Os dados originais (Parquets em `_inbox/data/`) foram carregados uma única vez no Supabase durante o desenvolvimento. Pra re-popular do zero a partir dos Parquets, o histórico em `git log` antes do commit de cleanup tem o script de import (`scripts/migrate_sqlite_to_supabase.py`).
 
 Abrir [http://localhost:3000](http://localhost:3000).
 

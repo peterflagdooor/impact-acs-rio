@@ -27,6 +27,24 @@ Repos atualmente em `_refs/`:
 - `claude-impact-lab-rio/` — instrucoes gerais do hackathon (taicor-ai)
 - `claude-impact-lab-saude/` — dataset do projeto de saude (prefeitura-rio), tema central do grupo
 
+### Repos externos do time (fora deste diretorio) — read-only
+
+Alem de `_refs/`, existem repos do time clonados em outros caminhos do disco. Eles servem como **fonte de conhecimento** (codigo, analises, design) para portar ideias e materiais para este repo, que e a fonte de verdade. As mesmas regras de read-only do `_refs/` se aplicam: **nunca write, nunca git, so leitura e copia para fora**.
+
+Repos externos atualmente acompanhados:
+
+| Path absoluto | Origem | Conteudo util |
+|---|---|---|
+| `/Users/peterflag/Documents/Projects/inteligencia-no-territorio/` | Dev parceiro do Peter | Frontend HTML estatico (gestor + ACS), pipeline Python (score, invisiveis, roteirizacao), 15 analises em MD, regua de visitas YAML |
+
+Regras (espelham as do `_refs/`):
+
+- Nao editar, renomear, mover ou deletar arquivos dentro desses paths.
+- Nao rodar `git commit`, `git checkout`, `git reset`, `git push` ou qualquer outra operacao git que modifique o repo externo. O **unico** comando git permitido e `git pull` (e so quando o Peter pedir explicitamente, para sincronizar com o trabalho atualizado do parceiro).
+- Nao criar arquivos novos la dentro (nem caches, nem outputs, nem `.venv`).
+- Leitura, grep, copia para dentro do repo Impact (`_inbox/`, `docs/`, `scripts/`, `src/`) — tudo liberado.
+- Quando portar codigo, **reescrever no padrao do Impact** (TS no backend Hono, React/Next no frontend, Cera Pro como fonte, brand Prefeitura Rio que ja temos em `_inbox/brandbook.html`). Nao copiar Python ou HTML literalmente.
+
 ## Setup / onboarding (para novos membros do time)
 
 Depois de `git clone` deste repo, rodar:
