@@ -18,7 +18,7 @@ export function EquipeSelector({ equipes, initialEquipe, initialCapacidade }: Pr
   function gerar() {
     if (!equipe) return;
     const q = new URLSearchParams({ equipe_id: equipe, capacidade: String(capacidade) });
-    router.push(`/acs?${q.toString()}`);
+    router.push(`/agenda?${q.toString()}`);
   }
 
   return (
