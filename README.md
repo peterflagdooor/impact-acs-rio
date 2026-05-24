@@ -1,109 +1,176 @@
-# ACS Inteligente — Apoio à reunião semanal das equipes de Saúde da Família
+<p align="center">
+  <img src="docs/assets/header.svg" alt="ACS Inteligente — Claude Impact Lab Rio 2026" width="100%">
+</p>
 
-> Submissão para o **Claude Impact Lab Rio 2026** — tema saúde pública (Inteligência no Território).
+<p align="center">
+  <a href="https://www.anthropic.com/"><img alt="Claude" src="https://img.shields.io/badge/Claude-Sonnet%204.6%20%2B%20Haiku%204.5-D97757?style=flat-square&logo=anthropic&logoColor=white"></a>
+  <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=nextdotjs">
+  <img alt="Hono" src="https://img.shields.io/badge/Hono-4-E36002?style=flat-square&logo=hono&logoColor=white">
+  <img alt="Supabase" src="https://img.shields.io/badge/Supabase-Postgres-3FCF8E?style=flat-square&logo=supabase&logoColor=white">
+  <img alt="Twilio" src="https://img.shields.io/badge/Twilio-WhatsApp-F22F46?style=flat-square&logo=twilio&logoColor=white">
+  <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white">
+</p>
 
-## Equipe
+> Submissão para o **Claude Impact Lab Rio 2026** · tema **Inteligência no Território** (Saúde da Família · SMS Rio).
 
-- **Peter Flag** ([@peterflagdooor](https://github.com/peterflagdooor))
-- *(adicionar demais membros do time aqui antes da submissão final)*
+---
 
-## Tema
+## TL;DR
 
-Saúde pública — **Inteligência no Território** (apoio aos Agentes Comunitários de Saúde do Rio de Janeiro).
+Os ACS do Rio fazem 1,2M+ visitas/ano, mas **metade dos cadastros nunca recebeu uma visita** e **54% dos pacientes pós-urgência não têm followup em 30 dias**. O gargalo não é trabalho — é **priorização** e **captura**. Criamos um mini-ERP que junta os dois lados:
 
-## Resumo da solução
+- O ACS conta a visita pelo WhatsApp em texto livre → o Claude estrutura → o paciente já entra atualizado na reunião semanal da equipe.
+- A reunião acontece em cima de um dashboard institucional (visual SMS Rio) com **score composto de prioridade**, **heatmap territorial** e **chat IA contextual** que consulta o banco em tempo real.
 
-Mini-ERP web institucional (visual SMS Rio) que apoia a **reunião semanal** da equipe de Saúde da Família (médico, enfermeiro, ACS) com três frentes integradas:
+> **Princípio:** o sistema some na captura (WhatsApp, o canal que o ACS já usa) e aparece na decisão (a reunião onde se define a semana).
 
-1. **Ingestão via WhatsApp** — ACS manda texto pós-visita; Claude extrai sintomas, alertas e ações; sistema atualiza paciente em segundos. *Reduz a fricção do "caderninho do ACS".*
-2. **Dashboard de priorização** — pacientes ordenados por score composto (4 eixos: clínico, social, temporal, gatilho), heatmap territorial de urgências, marcação de sedes das equipes com isócronas a pé (10/15 min) via OpenRouteService.
-3. **Chat IA contextual** — durante a reunião semanal, qualquer membro da equipe pergunta em linguagem natural ("Quem precisa de visita amanhã na equipe X?", "Quantas gestantes sem visita recente?") e o Claude consulta o banco em tempo real via tool use.
+<p align="center"><img src="docs/assets/divider.svg" alt="" width="100%"></p>
 
-**Justificativa do impacto** (baseado em EDA do dataset, ver [docs/analise-completa-dataset-saude.md](docs/analise-completa-dataset-saude.md)):
+## Por que importa (impacto quantificado)
 
-- **50% dos cadastros nunca foram visitados em 1 ano** (48.838 de 97.938)
-- **54.4% dos pacientes pós-urgência demoram +30 dias por followup** (mediana 36d)
-- **43% dos pacientes são "fantasma"** — sem visita E sem evento clínico no ano
-- **12.636 idosos 66+** sem visita
+EDA completo do dataset SMS Rio em [docs/analise-completa-dataset-saude.md](docs/analise-completa-dataset-saude.md).
+
+| Indicador | Número | O que isso significa |
+|---|---|---|
+| Cadastros sem visita em 1 ano | **48.838 / 97.938 (50%)** | Metade do território é invisível pra equipe |
+| Pacientes pós-urgência sem followup 30d | **54,4%** (mediana 36d) | Janela crítica de adesão perdida |
+| Pacientes "fantasma" (sem visita E sem evento clínico) | **43%** | Nem ACS sabe que existem, nem sistema viu |
+| Idosos 66+ sem visita no ano | **12.636** | População de altíssimo risco invisível |
+
+A solução **não cria novo trabalho** — reorganiza o trabalho que já é feito, com priorização orientada por dados e captura no canal que o ACS já usa todo dia.
+
+<p align="center"><img src="docs/assets/divider.svg" alt="" width="100%"></p>
+
+## Como o Claude está no produto
+
+| Onde | Modelo | Para quê |
+|---|---|---|
+| **Ingestão** (webhook WhatsApp) | **Haiku 4.5** | Extrai de texto livre do ACS um JSON estruturado: sintomas, alertas, ações tomadas, gravidade |
+| **Chat da reunião** | **Sonnet 4.6 + tool use** | 4 ferramentas read-only (`query_patients`, `query_alerts`, `query_kpis`, `query_group_stats`). Claude decide quais chamar e compõe a resposta. |
+| **Score composto** | regras + Haiku | 4 eixos: clínico, social, temporal, gatilho |
+
+<p align="center"><img src="docs/assets/divider.svg" alt="" width="100%"></p>
 
 ## Arquitetura
 
-```
-ACS no campo ──► WhatsApp ──► Twilio Sandbox ──► ngrok webhook ──► Backend Hono
-                                                                      │
-                                                                      ▼
-                                                  Claude Haiku 4.5 (extração estruturada)
-                                                                      │
-                                                                      ▼
-                                                          Supabase Postgres
-                                                                      │
-                                            ┌────── score recompute por paciente ──────┐
-                                            ▼                                            ▼
-                                Dashboard Next.js                              Chat IA (Claude Sonnet 4.6)
-                                  + Leaflet heatmap                              via tool use whitelist
-                                  + ORS isochrones                                 (4 ferramentas read-only)
-```
+<p align="center">
+  <img src="docs/assets/flow.svg" alt="Fluxo arquitetural — WhatsApp → Twilio → Hono → Claude → Supabase → Dashboard" width="100%">
+</p>
 
-**Como o Claude foi usado:**
-- **Extração estruturada** de mensagem livre do ACS (Haiku 4.5) → JSON com sintomas, alertas, ações
-- **Chat com tool use** (Sonnet 4.6) — 4 ferramentas read-only: `query_patients`, `query_alerts`, `query_kpis`, `query_group_stats`. Claude decide quais chamar e como compor a resposta.
+**Três planos integrados:**
 
-**Stack:**
-- Frontend: Next.js 16 (App Router) + Tailwind v4 + Cera Pro + Leaflet + brand institucional Prefeitura Rio
-- Backend: Node 20 + TypeScript + Hono + `postgres` (porsager)
-- Banco: Supabase Postgres (`Hackaton-Claude-Impact`, us-east-1) — schema versionado em `supabase/migrations/`
-- IA: Anthropic Claude (Sonnet 4.6 + Haiku 4.5) via `@anthropic-ai/sdk`
-- WhatsApp: Twilio SDK direto (sandbox)
-- Mapa: Leaflet + OpenStreetMap + ORS isochrones (proxy backend)
-- Dados originais: 4 Parquets anonimizados (SMS Rio) carregados no Supabase
+1. **Plano de captura** — ACS no campo · WhatsApp · Twilio Sandbox · webhook Hono · Haiku 4.5 extrai e persiste.
+2. **Plano de decisão** — reunião semanal em cima do dashboard Next.js: lista priorizada por score, heatmap Leaflet, isócronas a pé (OpenRouteService).
+3. **Plano de exploração** — chat IA com tool use: a equipe pergunta em linguagem natural, o Claude consulta o Postgres ao vivo.
 
-## Como rodar localmente
+<p align="center"><img src="docs/assets/divider.svg" alt="" width="100%"></p>
+
+## Stack & serviços
+
+| Camada | Tecnologia | Por que |
+|---|---|---|
+| Frontend | Next.js 16 (App Router) · React 19 · Tailwind v4 · Leaflet · Cera Pro | Brand Prefeitura Rio + mapas vetoriais leves |
+| Backend | Node 20 · TypeScript · Hono 4 · `postgres` (porsager) | Webhook rápido, sem framework gordo |
+| Banco | **Supabase** Postgres (`Hackaton-Claude-Impact`, us-east-1) | Schema versionado em `supabase/migrations/` |
+| IA | **Anthropic** Claude Sonnet 4.6 + Haiku 4.5 via `@anthropic-ai/sdk` | Tool use + extração estruturada |
+| WhatsApp | **Twilio** Sandbox via SDK oficial | Canal nativo do ACS |
+| Geocode/Isócronas | **OpenRouteService** (proxy server-side) | Tempo a pé para sedes de equipe |
+| Túnel local | **ngrok** | Webhook público para o Twilio |
+| Dados origem | 4 Parquets anonimizados SMS Rio (`_inbox/data/`) | Cidadão · profissional · agendamento · encontro |
+
+<p align="center"><img src="docs/assets/divider.svg" alt="" width="100%"></p>
+
+## Setup
 
 ```bash
-# 1. Clone e setup
 git clone https://github.com/peterflagdooor/impact-acs-rio.git
 cd impact-acs-rio
 
-# 2. Configurar .env por subapp (copiar templates e preencher com credenciais reais)
-cp src/backend/.env.example  src/backend/.env       # ANTHROPIC + TWILIO + ORS + DATABASE_URL (Supabase)
+cp src/backend/.env.example  src/backend/.env
 cp src/frontend/.env.example src/frontend/.env.local
 
-# 3. Aplicar schema no Supabase (ver supabase/migrations/)
 supabase link --project-ref <seu-project-ref>
 supabase db push
 
-# 4. Backend (porta 3001)
-cd src/backend && npm install && npm run dev &
+(cd src/backend  && npm install && npm run dev) &   # :3001
+(cd src/frontend && npm install && npm run dev) &   # :3000
 
-# 5. Frontend (porta 3000)
-cd ../frontend && npm install && npm run dev &
-
-# 6. Webhook público pro Twilio (terminal separado)
 ngrok http 3001
-# atualizar Twilio Console → Sandbox webhook URL pra https://<id>.ngrok.io/webhook/whatsapp
+# Twilio Console → Sandbox webhook = https://<id>.ngrok.io/webhook/whatsapp
 ```
 
-> **Sobre os dados:** o schema está versionado em `supabase/migrations/`. Os dados originais (Parquets em `_inbox/data/`) foram carregados uma única vez no Supabase durante o desenvolvimento. Pra re-popular do zero a partir dos Parquets, o histórico em `git log` antes do commit de cleanup tem o script de import (`scripts/migrate_sqlite_to_supabase.py`).
+Dashboard: [http://localhost:3000](http://localhost:3000)
 
-Abrir [http://localhost:3000](http://localhost:3000).
+### `.env.example` (raiz — referência consolidada)
 
-## Documentação
+> Em uso real, cada subapp tem o seu: `src/backend/.env` e `src/frontend/.env.local` (ambos gitignored).
 
-- [Spec do MVP](docs/superpowers/specs/2026-05-24-mvp-acs-design.md) — design completo
-- [Plano de implementação](docs/superpowers/plans/2026-05-24-mvp-acs-implementation.md)
-- [Análise completa do dataset](docs/analise-completa-dataset-saude.md) — quantitativa + qualitativa
+```env
+# === Backend (src/backend/.env) ===
+
+# Anthropic — Sonnet 4.6 (chat) + Haiku 4.5 (extração)
+ANTHROPIC_API_KEY=sk-ant-xxx
+
+# Twilio (WhatsApp Sandbox)
+TWILIO_ACCOUNT_SID=ACxxx
+TWILIO_AUTH_TOKEN=xxx
+TWILIO_WHATSAPP_FROM=whatsapp:+14155238886
+
+# Supabase Postgres (Session pooler — Project Settings → Database → Connection string)
+DATABASE_URL=postgresql://postgres.<project-ref>:<password>@aws-1-<region>.pooler.supabase.com:5432/postgres
+
+PORT=3001
+PUBLIC_WEBHOOK_URL=https://changeme.ngrok.io
+
+# OpenRouteService — proxy server-side (NÃO expor via NEXT_PUBLIC_*)
+ORS_API_KEY=eyJ...
+
+# === Frontend (src/frontend/.env.local) ===
+
+# Vars NEXT_PUBLIC_* são expostas ao browser
+NEXT_PUBLIC_API_URL=http://localhost:3001
+```
+
+<p align="center"><img src="docs/assets/divider.svg" alt="" width="100%"></p>
+
+## Estrutura do repo
+
+```
+src/
+├── backend/        Hono + Anthropic SDK + postgres + Twilio
+│   └── src/routes/ webhook.ts · chat.ts (tool use)
+├── frontend/       Next.js 16 (App Router) — /pacientes · /chat
+supabase/migrations/  schema versionado (init + fase 2 score flags)
+docs/
+├── analise-completa-dataset-saude.md      EDA quantitativa do dataset
+└── analises-territorio/                   15 análises temáticas + soluções
+_inbox/            briefings oficiais, Q&A SMS-Rio, dados Parquet, brandbook
+_refs/             repos de referência (read-only — não vão pro git)
+```
+
+<p align="center"><img src="docs/assets/divider.svg" alt="" width="100%"></p>
+
+## Roadmap
+
+- **Áudio no WhatsApp** — voice notes do ACS via Whisper → Claude (já natural pro canal)
+- **Família como entidade** — ACS confirma família em campo, sistema passa a operar família-cêntrico
+- **Integração Vitacare** — export/import com o prontuário oficial da SMS Rio
+- **Roteirização otimizada** — ORS routing além de isócronas (key já configurada)
+- **PWA do ACS** — captura offline-first, sync quando voltar à rede
+
+## Equipe
+
+**Peter Flag** · [@peterflagdooor](https://github.com/peterflagdooor) — *adicionar demais membros antes da submissão*
+
+## Documentação técnica
+
+- [Análise completa do dataset](docs/analise-completa-dataset-saude.md)
+- [Análises temáticas + soluções (15 docs)](docs/analises-territorio/README.md)
 - [Briefing oficial do desafio](_inbox/briefing-acs-vulnerabilidade.md)
 - [Transcrição do Q&A com SMS-Rio](_inbox/transcricao-qa-sms-rio.md)
 
-## Roadmap (próximas evoluções)
+---
 
-- **Áudio**: aceitar voice notes do WhatsApp (Whisper para transcrição, depois Claude para extração)
-- **Família como entidade**: ACS confirma família em campo via WhatsApp, sistema passa a operar família-cêntrico (já temos calibração técnica em `scripts/eda_completo.py`)
-- **Integração com Vitacare**: export/import com o prontuário oficial da SMS Rio
-- **Roteirização otimizada** com OpenRouteService routing (já temos a key configurada, faltou tempo no MVP)
-- **Multi-tenant**: várias unidades de saúde com isolamento de dados
-- **Mobile-first**: PWA específica pro ACS (hoje canal é WhatsApp + dashboard no laptop da reunião)
-
-## Demo
-
-*(adicionar link de aplicação deployada OU vídeo de 60s aqui antes da submissão)*
+<p align="center">
+  <sub>Construído em ~36h para o <b>Claude Impact Lab Rio 2026</b> · feito com <a href="https://www.anthropic.com/claude">Claude</a>, café e respeito pelo trabalho dos ACS.</sub>
+</p>

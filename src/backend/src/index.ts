@@ -25,8 +25,20 @@ import { chat } from './routes/chat.js';
 
 const app = new Hono();
 
+// Lista de origens permitidas: localhost (dev) + FRONTEND_URL (Vercel em prod).
+// Permite também qualquer subdomínio *.vercel.app pra preview deployments.
+const allowedOrigins = [
+  'http://localhost:3000',
+  process.env.FRONTEND_URL,
+].filter((o): o is string => Boolean(o));
+
 app.use('*', cors({
-  origin: ['http://localhost:3000'],
+  origin: (origin) => {
+    if (!origin) return origin;
+    if (allowedOrigins.includes(origin)) return origin;
+    if (/^https:\/\/[a-z0-9-]+\.vercel\.app$/i.test(origin)) return origin;
+    return null;
+  },
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE'],
   allowHeaders: ['Content-Type', 'Authorization'],
 }));
