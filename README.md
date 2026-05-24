@@ -3,12 +3,17 @@
 </p>
 
 <p align="center">
+  <a href="https://impact-acs-rio.vercel.app"><img alt="Demo" src="https://img.shields.io/badge/%E2%96%B6%20demo-impact--acs--rio.vercel.app-0B6FB8?style=flat-square&labelColor=0A2540"></a>
   <a href="https://www.anthropic.com/"><img alt="Claude" src="https://img.shields.io/badge/Claude-Sonnet%204.6%20%2B%20Haiku%204.5-D97757?style=flat-square&logo=anthropic&logoColor=white"></a>
   <img alt="Next.js" src="https://img.shields.io/badge/Next.js-16-000000?style=flat-square&logo=nextdotjs">
   <img alt="Hono" src="https://img.shields.io/badge/Hono-4-E36002?style=flat-square&logo=hono&logoColor=white">
   <img alt="Supabase" src="https://img.shields.io/badge/Supabase-Postgres-3FCF8E?style=flat-square&logo=supabase&logoColor=white">
   <img alt="Twilio" src="https://img.shields.io/badge/Twilio-WhatsApp-F22F46?style=flat-square&logo=twilio&logoColor=white">
   <img alt="TypeScript" src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript&logoColor=white">
+</p>
+
+<p align="center">
+  <b>🌐 Acessar em produção:</b> <a href="https://impact-acs-rio.vercel.app">impact-acs-rio.vercel.app</a>
 </p>
 
 > Submissão para o **Claude Impact Lab Rio 2026** · tema **Inteligência no Território** (Saúde da Família · SMS Rio).
@@ -99,7 +104,9 @@ ngrok http 3001
 # Twilio Console → Sandbox webhook = https://<id>.ngrok.io/webhook/whatsapp
 ```
 
-Dashboard: [http://localhost:3000](http://localhost:3000)
+Dashboard local: [http://localhost:3000](http://localhost:3000)
+
+**Produção:** [impact-acs-rio.vercel.app](https://impact-acs-rio.vercel.app)
 
 ### Testar o fluxo WhatsApp (sandbox)
 
