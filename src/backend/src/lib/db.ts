@@ -434,3 +434,81 @@ export async function getInvisiveis(opts: {
   const total = por_categoria[1] + por_categoria[2] + por_categoria[3];
   return { total, por_categoria, invisiveis };
 }
+
+// ── Fase 3: agenda diaria por equipe ──────────────────────────────────────
+
+export interface EquipeSede {
+  equipe_id: string;
+  endereco_latitude: number;
+  endereco_longitude: number;
+}
+
+export async function getEquipeSede(equipe_id: string): Promise<EquipeSede | null> {
+  const rows = await sql<EquipeSede[]>`
+    SELECT equipe_id, endereco_latitude, endereco_longitude
+    FROM equipes
+    WHERE equipe_id = ${equipe_id}
+  `;
+  return rows[0] ?? null;
+}
+
+export interface CandidatoAgenda {
+  paciente_id: string;
+  equipe_id: string;
+  faixa_etaria: string;
+  hipertenso: number;
+  diabetico: number;
+  gestacao: number;
+  situacao_vulnerabilidade: number;
+  endereco_latitude: number;
+  endereco_longitude: number;
+  score: number;
+  prioridade: string | null;
+  fatores: string[];
+  flag_invisivel: boolean;
+  flag_crise_sem_vinculo: boolean;
+  ultima_visita: string | null;
+  dias_sem_visita: number;
+  n_urg_30d: number;
+  n_urg_ano: number;
+  tem_agendamento_futuro: boolean;
+}
+
+export async function getCandidatosAgenda(equipe_id: string, limit: number): Promise<CandidatoAgenda[]> {
+  const rows = await sql<Array<CandidatoAgenda & { fatores: unknown; ultima_visita: string | null }>>`
+    SELECT
+      p.paciente_id, p.equipe_id, p.faixa_etaria,
+      p.hipertenso, p.diabetico, p.gestacao, p.situacao_vulnerabilidade,
+      p.endereco_latitude, p.endereco_longitude,
+      COALESCE(s.score, 0)::float                                     AS score,
+      s.prioridade,
+      COALESCE(s.fatores, '[]'::jsonb)                                AS fatores,
+      COALESCE(s.flag_invisivel, FALSE)                               AS flag_invisivel,
+      COALESCE(s.flag_crise_sem_vinculo, FALSE)                       AS flag_crise_sem_vinculo,
+      (SELECT MAX(registrados_em)::text FROM visitas v
+        WHERE v.paciente_id = p.paciente_id)                          AS ultima_visita,
+      COALESCE(
+        (SELECT (DATE '2025-12-31' - MAX(registrados_em))::int FROM visitas v
+          WHERE v.paciente_id = p.paciente_id),
+        999
+      )::int                                                          AS dias_sem_visita,
+      (SELECT COUNT(*)::int FROM eventos_clinicos e
+        WHERE e.paciente_id = p.paciente_id
+          AND e.tipo = 'urgencia-emergencia-ou-internacao'
+          AND e.data_referencia >= DATE '2025-12-31' - INTERVAL '30 days') AS n_urg_30d,
+      (SELECT COUNT(*)::int FROM eventos_clinicos e
+        WHERE e.paciente_id = p.paciente_id
+          AND e.tipo = 'urgencia-emergencia-ou-internacao')           AS n_urg_ano,
+      EXISTS(SELECT 1 FROM eventos_clinicos e
+        WHERE e.paciente_id = p.paciente_id
+          AND e.tipo = 'agendamento'
+          AND e.data_referencia > DATE '2025-12-31')                  AS tem_agendamento_futuro
+    FROM pacientes p
+    LEFT JOIN pacientes_scores s USING (paciente_id)
+    WHERE p.equipe_id = ${equipe_id}
+      AND COALESCE(s.score, 0) > 0
+    ORDER BY score DESC
+    LIMIT ${limit}
+  `;
+  return rows.map(r => ({ ...r, fatores: (r.fatores as string[]) ?? [] }));
+}
