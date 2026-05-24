@@ -32,3 +32,15 @@ outputs/
 tmp/
 *.sqlite
 *.db
+
+# Banco gerado pelo ETL
+db.sqlite
+
+# Node (frontend e backend)
+node_modules/
+src/frontend/.next/
+src/frontend/out/
+src/backend/dist/
+
+# IDE/local
+.DS_Store
