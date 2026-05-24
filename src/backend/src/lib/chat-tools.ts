@@ -1,4 +1,5 @@
 import { listPatients, getOpenAlerts, getKpis, queryGroupStats, getInvisiveis, getGestaoPainel } from './db.js';
+import { buildAgenda } from './routing.js';
 
 export interface ToolDef {
   name: string;
@@ -64,6 +65,19 @@ export const CHAT_TOOLS: ToolDef[] = [
       properties: {},
     },
   },
+  {
+    name: 'query_agenda_equipe',
+    description: 'Gera a agenda diária otimizada de visitas para uma equipe específica. Retorna lista ordenada por proximidade geográfica (nearest neighbor a partir da sede), com top N pacientes por score. Use quando o usuário perguntar "qual a agenda da equipe X" ou "quem visitar amanhã na equipe Y".',
+    input_schema: {
+      type: 'object',
+      properties: {
+        equipe_id: { type: 'string', description: 'ID da equipe (obrigatório)' },
+        capacidade: { type: 'number', description: 'Número de visitas (default 6, max 50)' },
+        com_justificativas: { type: 'boolean', description: 'Se true, inclui justificativa por paciente (mais lento). Default false.' },
+      },
+      required: ['equipe_id'],
+    },
+  },
 ];
 
 export async function executeTool(name: string, input: Record<string, unknown>): Promise<unknown> {
@@ -90,6 +104,14 @@ export async function executeTool(name: string, input: Record<string, unknown>):
     }
     case 'query_painel_pressao':
       return getGestaoPainel();
+    case 'query_agenda_equipe': {
+      const equipe_id = input.equipe_id as string;
+      const capacidade = input.capacidade as number | undefined;
+      const com_justificativas = input.com_justificativas as boolean | undefined;
+      const r = await buildAgenda({ equipe_id, capacidade, com_justificativas });
+      if (!r) return { error: `equipe ${equipe_id} nao encontrada` };
+      return r;
+    }
     default:
       throw new Error(`Tool desconhecida: ${name}`);
   }
