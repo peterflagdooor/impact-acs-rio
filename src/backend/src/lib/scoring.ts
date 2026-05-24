@@ -1,5 +1,5 @@
 import weights from '../config/scoring-weights.json' with { type: 'json' };
-import { getPatient, getPatientVisits, getPatientEvents, upsertScore } from './db.js';
+import { db, getPatient, getPatientVisits, getPatientEvents, upsertScore } from './db.js';
 
 const TODAY = new Date('2025-12-31');
 
@@ -62,6 +62,17 @@ export function computeScore(paciente_id: string): { score: number; fatores: str
   if (proximos.length) {
     fatores.push('agendamento_proximo_14d');
     total += f.gatilho.agendamento_proximo_14d;
+  }
+
+  // Alerta crítico (P1) aberto — escalada ativa identificada pelo ACS em campo.
+  // Compensa a queda do fator temporal quando a visita revela severidade grave.
+  // Sai do score quando o gestor marcar o alerta como resolvido (resolvido_em != NULL).
+  const alertasP1 = db.prepare(
+    'SELECT COUNT(*) AS n FROM alertas WHERE paciente_id = ? AND prioridade = 1 AND resolvido_em IS NULL'
+  ).get(paciente_id) as { n: number };
+  if (alertasP1.n > 0) {
+    fatores.push('alerta_critico_aberto');
+    total += f.gatilho.alerta_critico_aberto;
   }
 
   const score = Math.min(total, weights.max_score);

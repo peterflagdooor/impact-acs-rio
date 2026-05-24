@@ -51,5 +51,6 @@ export function factorToTagKind(factor: string): string {
   if (factor.startsWith('urgencia')) return 'emergencia';
   if (factor.startsWith('sem_visita')) return 'sem-visita';
   if (factor === 'agendamento_proximo_14d') return 'agendamento';
+  if (factor === 'alerta_critico_aberto') return 'emergencia';
   return factor;
 }

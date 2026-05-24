@@ -19,7 +19,8 @@
     "gatilho": {
       "urgencia_menor_30d": 25,
       "urgencia_30_a_90d": 10,
-      "agendamento_proximo_14d": 5
+      "agendamento_proximo_14d": 5,
+      "alerta_critico_aberto": 20
     }
   }
 }
