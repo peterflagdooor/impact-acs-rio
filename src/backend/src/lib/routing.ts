@@ -86,3 +86,92 @@ export function buildRota<T extends { endereco_latitude: number; endereco_longit
 
   return itens;
 }
+
+import { getEquipeSede, getCandidatosAgenda, type CandidatoAgenda } from './db.js';
+import { gerarJustificativa } from './justificativas.js';
+
+export interface AgendaItem {
+  ordem_visita: number;
+  paciente_id: string;
+  faixa_etaria: string;
+  hipertenso: number;
+  diabetico: number;
+  gestacao: number;
+  situacao_vulnerabilidade: number;
+  score: number;
+  prioridade: string | null;
+  flag_invisivel: boolean;
+  flag_crise_sem_vinculo: boolean;
+  dias_sem_visita: number;
+  n_urg_30d: number;
+  n_urg_ano: number;
+  tem_agendamento_futuro: boolean;
+  distancia_anterior_km: number;
+  distancia_acumulada_km: number;
+  endereco_latitude: number;
+  endereco_longitude: number;
+  justificativa: string | null;
+}
+
+export interface Agenda {
+  equipe_id: string;
+  sede: { lat: number; lon: number };
+  capacidade: number;
+  total_itens: number;
+  distancia_total_km: number;
+  agenda: AgendaItem[];
+}
+
+const CAPACIDADE_PADRAO = 6;
+
+export async function buildAgenda(opts: {
+  equipe_id: string;
+  capacidade?: number;
+  com_justificativas?: boolean;
+}): Promise<Agenda | null> {
+  const cap = opts.capacidade ?? CAPACIDADE_PADRAO;
+  const sede = await getEquipeSede(opts.equipe_id);
+  if (!sede) return null;
+
+  const candidatos = await getCandidatosAgenda(opts.equipe_id, cap);
+  const rota = buildRota({ lat: sede.endereco_latitude, lon: sede.endereco_longitude }, candidatos);
+
+  const itens: AgendaItem[] = [];
+  for (const r of rota) {
+    const c = r.paciente;
+    const justificativa = opts.com_justificativas ? await gerarJustificativa(c) : null;
+    itens.push({
+      ordem_visita: r.ordem_visita,
+      paciente_id: c.paciente_id,
+      faixa_etaria: c.faixa_etaria,
+      hipertenso: c.hipertenso,
+      diabetico: c.diabetico,
+      gestacao: c.gestacao,
+      situacao_vulnerabilidade: c.situacao_vulnerabilidade,
+      score: c.score,
+      prioridade: c.prioridade,
+      flag_invisivel: c.flag_invisivel,
+      flag_crise_sem_vinculo: c.flag_crise_sem_vinculo,
+      dias_sem_visita: c.dias_sem_visita,
+      n_urg_30d: c.n_urg_30d,
+      n_urg_ano: c.n_urg_ano,
+      tem_agendamento_futuro: c.tem_agendamento_futuro,
+      distancia_anterior_km: r.distancia_anterior_km,
+      distancia_acumulada_km: r.distancia_acumulada_km,
+      endereco_latitude: c.endereco_latitude,
+      endereco_longitude: c.endereco_longitude,
+      justificativa,
+    });
+  }
+
+  const distancia_total_km = itens.length > 0 ? itens[itens.length - 1].distancia_acumulada_km : 0;
+
+  return {
+    equipe_id: opts.equipe_id,
+    sede: { lat: sede.endereco_latitude, lon: sede.endereco_longitude },
+    capacidade: cap,
+    total_itens: itens.length,
+    distancia_total_km,
+    agenda: itens,
+  };
+}
