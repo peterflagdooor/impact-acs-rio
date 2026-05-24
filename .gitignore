@@ -27,8 +27,7 @@ Thumbs.db
 .vscode/
 .idea/
 
-# Outputs locais
-outputs/
+# Outputs locais (mantidos sob versionamento em docs/outputs/)
 tmp/
 *.sqlite
 *.db

@@ -26,6 +26,9 @@ Cada frente entrega: (a) 1 script Python autocontido, (b) outputs em `docs/outpu
 
 ### 2.1 Estrutura de outputs
 
+> **Nota sobre `.gitignore`:** a regra global `outputs/` foi removida do `.gitignore` para permitir que `docs/outputs/` seja versionado. Decisão alinhada com o Peter: os outputs das frentes vão pro git (todos têm tamanho moderado: parquets pequenos, HTML, CSV).
+
+
 ```
 docs/
   analise-completa-dataset-saude.md  (atualizado: cap 10 reescrito + cap 11-15 novos)
