@@ -4,6 +4,7 @@ import { cors } from 'hono/cors';
 import 'dotenv/config';
 
 import {
+  db,
   getKpis,
   listPatients,
   getPatient,
@@ -14,6 +15,7 @@ import {
   getTerritoryHeatmap,
 } from './lib/db.js';
 import { recomputeAndSave } from './lib/scoring.js';
+import { getIsochrones } from './lib/ors.js';
 import { webhook } from './routes/webhook.js';
 import { chat } from './routes/chat.js';
 
@@ -78,6 +80,35 @@ app.get('/api/alerts', (c) => {
 app.get('/api/territory/heatmap', (c) => {
   try {
     return c.json(getTerritoryHeatmap());
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.get('/api/territory/equipes', (c) => {
+  try {
+    const rows = db.prepare(`
+      SELECT equipe_id, endereco_latitude AS lat, endereco_longitude AS lng,
+             (SELECT COUNT(*) FROM pacientes WHERE equipe_id = e.equipe_id) AS n_pacientes
+      FROM equipes e
+      WHERE endereco_latitude BETWEEN -23.5 AND -22.5
+        AND endereco_longitude BETWEEN -43.9 AND -43.0
+    `).all();
+    return c.json(rows);
+  } catch (err) {
+    return c.json({ error: (err as Error).message }, 500);
+  }
+});
+
+app.post('/api/territory/isochrones', async (c) => {
+  try {
+    const { lat, lng, ranges_min } = await c.req.json<{ lat: number; lng: number; ranges_min?: number[] }>();
+    if (typeof lat !== 'number' || typeof lng !== 'number') {
+      return c.json({ error: 'lat e lng numéricos obrigatórios' }, 400);
+    }
+    const seconds = (ranges_min ?? [10, 15]).map(m => m * 60);
+    const data = await getIsochrones(lat, lng, seconds, 'foot-walking');
+    return c.json(data);
   } catch (err) {
     return c.json({ error: (err as Error).message }, 500);
   }

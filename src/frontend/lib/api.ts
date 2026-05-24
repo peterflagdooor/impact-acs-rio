@@ -48,6 +48,24 @@ async function api<T>(path: string, init?: RequestInit): Promise<T> {
   return res.json();
 }
 
+export interface EquipeSede {
+  equipe_id: string;
+  lat: number;
+  lng: number;
+  n_pacientes: number;
+}
+
+export interface IsochroneFeature {
+  type: 'Feature';
+  geometry: { type: 'Polygon' | 'MultiPolygon'; coordinates: number[][][] };
+  properties: { value: number; area?: number; reachfactor?: number };
+}
+
+export interface IsochroneResponse {
+  type: 'FeatureCollection';
+  features: IsochroneFeature[];
+}
+
 export const apiClient = {
   kpis: () => api<KPIs>('/api/kpis'),
   patients: (params: { equipe_id?: string; score_min?: number; limit?: number; offset?: number } = {}) => {
@@ -61,6 +79,13 @@ export const apiClient = {
   patient: (id: string) => api<{ paciente: Paciente; visitas: unknown[]; eventos: unknown[]; alertas: Alerta[] }>(`/api/patients/${id}`),
   alerts: () => api<Alerta[]>('/api/alerts'),
   heatmap: () => api<HeatmapPoint[]>('/api/territory/heatmap'),
+  equipesSedes: () => api<EquipeSede[]>('/api/territory/equipes'),
+  isochrones: (lat: number, lng: number, ranges_min: number[] = [10, 15]) =>
+    api<IsochroneResponse>('/api/territory/isochrones', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ lat, lng, ranges_min }),
+    }),
 };
 
 // Helper: priority level from score (1=urgente, 4=rotina)

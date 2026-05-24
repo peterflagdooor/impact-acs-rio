@@ -1,13 +1,16 @@
 import { apiClient } from '@/lib/api';
 import { KpiCard } from '@/components/kpi-card';
 import { PatientCard } from '@/components/patient-card';
+import { MapSection } from '@/components/map-section';
 
 export const dynamic = 'force-dynamic';
 
 export default async function Dashboard() {
-  const [kpis, topPatients] = await Promise.all([
+  const [kpis, topPatients, hotspots, equipes] = await Promise.all([
     apiClient.kpis(),
     apiClient.patients({ limit: 12 }),
+    apiClient.heatmap().catch(() => []),
+    apiClient.equipesSedes().catch(() => []),
   ]);
 
   return (
@@ -32,6 +35,17 @@ export default async function Dashboard() {
         />
         <KpiCard label="Alertas abertos" value={kpis.alertas_abertos} accent="red" />
         <KpiCard label="Urgências 30d" value={kpis.urgencias_30d.toLocaleString('pt-BR')} accent="cyan" />
+      </section>
+
+      <section>
+        <h2 className="text-2xl font-black mb-3" style={{ color: 'var(--blue-secondary)' }}>
+          Mapa do território
+        </h2>
+        <p className="text-sm mb-4 max-w-2xl" style={{ color: 'var(--grey-text)' }}>
+          Hotspots de urgência (vermelho) sobre o território. Clique em uma sede de equipe (azul)
+          para ver o alcance a pé do ACS em 10 e 15 minutos.
+        </p>
+        <MapSection hotspots={hotspots} equipes={equipes} />
       </section>
 
       <section>
