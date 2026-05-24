@@ -115,7 +115,9 @@ def port_parquet_to_table(conn: sqlite3.Connection, name: str) -> int:
     for col in df.columns:
         if "date" in col.lower() or "registrados_em" in col or "data_referencia" in col:
             df[col] = pd.to_datetime(df[col]).dt.strftime("%Y-%m-%d")
-    df.to_sql(name, conn, if_exists="replace", index=False, method="multi", chunksize=500)
+    # Usa "append" pra preservar a schema com PK/AUTOINCREMENT/defaults definida em SCHEMA.
+    # "replace" descartaria a estrutura e recriaria SEM as constraints.
+    df.to_sql(name, conn, if_exists="append", index=False, method="multi", chunksize=500)
     return len(df)
 
 
