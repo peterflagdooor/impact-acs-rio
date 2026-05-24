@@ -101,6 +101,22 @@ ngrok http 3001
 
 Dashboard: [http://localhost:3000](http://localhost:3000)
 
+### Testar o fluxo WhatsApp (sandbox)
+
+O backend escuta em `POST /webhook/whatsapp`. Para mandar uma mensagem real e ver o Claude extraindo + persistindo no Supabase, entre no sandbox do Twilio do projeto:
+
+1. No WhatsApp do seu celular, mande para **+1 415 523 8886** a mensagem:
+   ```
+   join oxygen-rise
+   ```
+2. Após o "joined" confirmar, mande uma mensagem como se fosse um ACS pós-visita. Exemplo:
+   > *Visitei dona Maria, 72 anos, rua X 123. Tá com tosse seca há 3 dias, febre baixa à noite. Pressão 14/9. Pedi pra ir no posto amanhã.*
+3. O backend recebe → Haiku 4.5 extrai → registro entra/atualiza no Postgres → aparece na lista priorizada do dashboard em `/pacientes`.
+
+> **Quem está autorizado:** o sandbox do Twilio aceita apenas números previamente cadastrados como *Sandbox Participants*. Para adicionar mais testadores, peça o `join oxygen-rise` para cada celular ou cadastre o número no Twilio Console → *Messaging → Try it out → Send a WhatsApp message → Sandbox settings*.
+>
+> **Token novo / sandbox próprio:** se for usar outra conta Twilio, o código `join <palavra>` muda — pegue o atual no Console e atualize o passo acima.
+
 ### `.env.example` (raiz — referência consolidada)
 
 > Em uso real, cada subapp tem o seu: `src/backend/.env` e `src/frontend/.env.local` (ambos gitignored).
