@@ -136,11 +136,15 @@ export async function buildAgenda(opts: {
   const candidatos = await getCandidatosAgenda(opts.equipe_id, cap);
   const rota = buildRota({ lat: sede.endereco_latitude, lon: sede.endereco_longitude }, candidatos);
 
-  const itens: AgendaItem[] = [];
-  for (const r of rota) {
+  // Gera todas as justificativas em paralelo (1 chamada Claude Haiku por paciente).
+  // Sequencial = N * latencia; paralelo ~= latencia max. Pra 6 pacientes, cai de ~16s pra ~3s.
+  const justificativas = opts.com_justificativas
+    ? await Promise.all(rota.map(r => gerarJustificativa(r.paciente)))
+    : rota.map(() => null);
+
+  const itens: AgendaItem[] = rota.map((r, i) => {
     const c = r.paciente;
-    const justificativa = opts.com_justificativas ? await gerarJustificativa(c) : null;
-    itens.push({
+    return {
       ordem_visita: r.ordem_visita,
       paciente_id: c.paciente_id,
       faixa_etaria: c.faixa_etaria,
@@ -160,9 +164,9 @@ export async function buildAgenda(opts: {
       distancia_acumulada_km: r.distancia_acumulada_km,
       endereco_latitude: c.endereco_latitude,
       endereco_longitude: c.endereco_longitude,
-      justificativa,
-    });
-  }
+      justificativa: justificativas[i],
+    };
+  });
 
   const distancia_total_km = itens.length > 0 ? itens[itens.length - 1].distancia_acumulada_km : 0;
 

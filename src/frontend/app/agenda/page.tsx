@@ -14,6 +14,9 @@ export default async function AgendaPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const equipe_id = params.equipe_id;
   const capacidade = params.capacidade ? Number(params.capacidade) : 6;
+  // Justificativas viram opt-in via ?com_justificativas=true (default false pra load <2s).
+  // Cada justificativa = 1 chamada Claude Haiku (~2-3s, paralelo).
+  const com_justificativas = params.com_justificativas === 'true';
 
   const equipes = await apiClient.equipesSedes().catch(() => []);
 
@@ -21,7 +24,7 @@ export default async function AgendaPage({ searchParams }: PageProps) {
   let erro: string | null = null;
   if (equipe_id) {
     try {
-      agenda = await apiClient.agendaEquipe(equipe_id, { capacidade, com_justificativas: true });
+      agenda = await apiClient.agendaEquipe(equipe_id, { capacidade, com_justificativas });
     } catch (err) {
       erro = (err as Error).message;
     }
@@ -55,6 +58,21 @@ export default async function AgendaPage({ searchParams }: PageProps) {
       {agenda && (
         <>
           <AgendaSummary agenda={agenda} />
+
+          {agenda.total_itens > 0 && !com_justificativas && (
+            <div className="rounded-md p-3 text-sm flex items-center justify-between gap-3" style={{ background: 'var(--grey-card)', color: 'var(--grey-text)' }}>
+              <span>
+                Justificativas geradas por IA (Claude) ficam ocultas por padrão para acelerar o carregamento.
+              </span>
+              <a
+                href={`/agenda?equipe_id=${equipe_id}&capacidade=${capacidade}&com_justificativas=true`}
+                className="font-bold whitespace-nowrap px-3 py-1.5 rounded-md text-xs uppercase tracking-wider"
+                style={{ background: 'var(--blue-light)', color: 'var(--white)' }}
+              >
+                Gerar com IA
+              </a>
+            </div>
+          )}
 
           {agenda.total_itens === 0 ? (
             <div className="rounded-lg p-8 text-center" style={{ background: 'var(--grey-card)', color: 'var(--grey-text)' }}>
