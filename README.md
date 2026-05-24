@@ -187,6 +187,7 @@ _refs/             repos de referência (read-only — não vão pro git)
 - **Gabriel Tyll** · gabriel.tyll@gmail.com
 - **Ricardo Brigante** · ricardo.brigante@gmail.com
 - **Vitor Medeiros** · vitoropdm@gmail.com
+- **Kadu Bruns** - kadubruns@gmail.com
 
 ## Documentação técnica
 
@@ -196,6 +197,9 @@ _refs/             repos de referência (read-only — não vão pro git)
 - [Transcrição do Q&A com SMS-Rio](_inbox/transcricao-qa-sms-rio.md)
 
 ---
+Demonstração
+
+https://drive.google.com/file/d/1J6oxZtzN7DKHvVkrf7oUDOjUuO7DsOY-/view?usp=sharing
 
 <p align="center">
   <sub>Construído em ~36h para o <b>Claude Impact Lab Rio 2026</b> · feito com <a href="https://www.anthropic.com/claude">Claude</a>, café e respeito pelo trabalho dos ACS.</sub>
