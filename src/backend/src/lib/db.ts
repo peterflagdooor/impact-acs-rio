@@ -229,7 +229,9 @@ export async function updateRegistroWhatsapp(
   // Aplica updates um por um pra simplificar (poucos campos)
   for (const k of updates) {
     const v = (fields as Record<string, unknown>)[k];
-    const value = (k === 'dados_extraidos' && v !== null && typeof v === 'object') ? sql.json(v as object) : v;
+    const value = (k === 'dados_extraidos' && v !== null && typeof v === 'object')
+      ? sql.json(v as Parameters<typeof sql.json>[0])
+      : v;
     await sql`UPDATE registros_whatsapp SET ${sql({ [k]: value })}, processado_em = NOW() WHERE id = ${id}`;
   }
 }
