@@ -33,8 +33,10 @@ tmp/
 *.sqlite
 *.db
 
-# Banco gerado pelo ETL
+# Banco gerado pelo ETL (e WAL files)
 db.sqlite
+db.sqlite-wal
+db.sqlite-shm
 
 # Node (frontend e backend)
 node_modules/

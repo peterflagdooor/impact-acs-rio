@@ -20,6 +20,12 @@ Pasta de **drops brutos** do hackathon Claude Impact (saúde). Tudo que cai aqui
 | [data/pacientes.parquet](data/pacientes.parquet) | Dataset | Google Drive (claude-impact-lab-saude) | 97.938 pacientes, 12 colunas (demográficos + comorbidades + endereço). ~8.4 MB |
 | [data/eventos_clinicos.parquet](data/eventos_clinicos.parquet) | Dataset | Google Drive (claude-impact-lab-saude) | 100.503 eventos, 2 tipos (`agendamento`, `urgencia-emergencia-ou-internacao`). ~5.5 MB |
 | [data/visitas.parquet](data/visitas.parquet) | Dataset | Google Drive (claude-impact-lab-saude) | 159.599 visitas, 3.531 profissionais, 365 dias. ~7.3 MB |
+| [brandbook.html](brandbook.html) | Design / Branding | Síntese visual extraída de saude.prefeitura.rio | **Sistema visual oficial do produto**: paleta institucional Prefeitura Rio, tipografia Cera Pro, escala 8pt, design tokens CSS, componentes (navbar SMS, cards de paciente com priority border, badges/tags clínicas) |
+| [assets-index.md](assets-index.md) | Design / Branding | Índice dos assets de design | Mapa dos arquivos `.otf` da Cera Pro em `_refs/assets/cera pro sv/`, snippets de `@font-face`, fallback stack |
+
+## Design / Branding — atalho
+
+Para qualquer UI que for gerada neste projeto, **partir de [brandbook.html](brandbook.html)** (cores, tipografia, espaçamento, componentes, design tokens). A fonte Cera Pro está disponível em [`_refs/assets/cera pro sv/`](../_refs/assets/cera%20pro%20sv/) — ver [assets-index.md](assets-index.md) para detalhe dos pesos/snippets.
 
 ## EDA rápido
 
