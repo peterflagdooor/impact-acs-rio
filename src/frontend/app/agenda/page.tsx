@@ -14,8 +14,6 @@ export default async function AgendaPage({ searchParams }: PageProps) {
   const params = await searchParams;
   const equipe_id = params.equipe_id;
   const capacidade = params.capacidade ? Number(params.capacidade) : 6;
-  // Justificativas viram opt-in via ?com_justificativas=true (default false pra load <2s).
-  // Cada justificativa = 1 chamada Claude Haiku (~2-3s, paralelo).
   const com_justificativas = params.com_justificativas === 'true';
 
   const equipes = await apiClient.equipesSedes().catch(() => []);
@@ -32,25 +30,32 @@ export default async function AgendaPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-6">
-      <header>
+      <div>
         <p className="t-section-label">ACS</p>
-        <h1 className="t-section-title">Agenda do dia</h1>
-        <p className="text-sm mt-3 max-w-2xl leading-relaxed" style={{ color: 'var(--grey-text)' }}>
-          Sequência otimizada de visitas para a equipe selecionada. Pacientes ordenados por
-          proximidade geográfica a partir da sede, priorizados por score composto.
+        <h1 className="text-3xl font-bold mt-1" style={{ color: 'var(--text)' }}>
+          Agenda do Dia
+        </h1>
+        <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+          Sequência otimizada de visitas — geográfica + score composto
         </p>
-      </header>
+      </div>
 
       <EquipeSelector equipes={equipes} initialEquipe={equipe_id} initialCapacidade={capacidade} />
 
       {!equipe_id && (
-        <div className="rounded-lg p-8 text-center" style={{ background: 'var(--grey-card)', color: 'var(--grey-text)' }}>
+        <div
+          className="rounded-2xl p-10 text-center text-sm"
+          style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
+        >
           Selecione uma equipe acima para gerar a agenda do dia.
         </div>
       )}
 
       {erro && (
-        <div className="rounded-lg p-4 text-sm" style={{ background: 'var(--p1-bg)', color: 'var(--p1-text)', border: '1px solid var(--p1-border)' }}>
+        <div
+          className="rounded-xl p-4 text-sm"
+          style={{ background: 'rgba(255,77,109,0.12)', color: 'var(--red)', border: '1px solid rgba(255,77,109,0.25)' }}
+        >
           Erro: {erro}
         </div>
       )}
@@ -60,14 +65,17 @@ export default async function AgendaPage({ searchParams }: PageProps) {
           <AgendaSummary agenda={agenda} />
 
           {agenda.total_itens > 0 && !com_justificativas && (
-            <div className="rounded-md p-3 text-sm flex items-center justify-between gap-3" style={{ background: 'var(--grey-card)', color: 'var(--grey-text)' }}>
+            <div
+              className="rounded-xl p-3 text-sm flex items-center justify-between gap-3"
+              style={{ background: 'var(--bg-card-2)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
+            >
               <span>
-                Justificativas geradas por IA (Claude) ficam ocultas por padrão para acelerar o carregamento.
+                Justificativas geradas por IA ocultas por padrão para acelerar o carregamento.
               </span>
               <a
                 href={`/agenda?equipe_id=${equipe_id}&capacidade=${capacidade}&com_justificativas=true`}
-                className="font-bold whitespace-nowrap px-3 py-1.5 rounded-md text-xs uppercase tracking-wider"
-                style={{ background: 'var(--blue-light)', color: 'var(--white)' }}
+                className="font-semibold whitespace-nowrap px-3 py-1.5 rounded-lg text-xs transition-opacity hover:opacity-80"
+                style={{ background: 'var(--purple)', color: '#fff' }}
               >
                 Gerar com IA
               </a>
@@ -75,7 +83,10 @@ export default async function AgendaPage({ searchParams }: PageProps) {
           )}
 
           {agenda.total_itens === 0 ? (
-            <div className="rounded-lg p-8 text-center" style={{ background: 'var(--grey-card)', color: 'var(--grey-text)' }}>
+            <div
+              className="rounded-2xl p-10 text-center text-sm"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
+            >
               Nenhum paciente prioritário encontrado pra essa equipe.
               <br />
               Os scores podem ainda não ter sido calculados — rodar o re-score completo.
@@ -83,14 +94,14 @@ export default async function AgendaPage({ searchParams }: PageProps) {
           ) : (
             <>
               <section>
-                <h2 className="text-xl font-black mb-3" style={{ color: 'var(--blue-secondary)' }}>
+                <h2 className="font-semibold text-base mb-3" style={{ color: 'var(--text)' }}>
                   Rota
                 </h2>
                 <AgendaMapSection agenda={agenda} />
               </section>
 
               <section>
-                <h2 className="text-xl font-black mb-3" style={{ color: 'var(--blue-secondary)' }}>
+                <h2 className="font-semibold text-base mb-3" style={{ color: 'var(--text)' }}>
                   Sequência de visitas
                 </h2>
                 <div className="space-y-3">

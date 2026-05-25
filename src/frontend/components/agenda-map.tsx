@@ -27,8 +27,8 @@ export function AgendaMap({ agenda }: Props) {
     const map = L.map(containerRef.current);
     mapRef.current = map;
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap',
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap, © CartoDB',
       maxZoom: 19,
     }).addTo(map);
 
@@ -39,22 +39,22 @@ export function AgendaMap({ agenda }: Props) {
 
     map.fitBounds(pts, { padding: [30, 30] });
 
-    // Sede
+    // Sede — white circle with purple ring
     L.circleMarker([agenda.sede.lat, agenda.sede.lon], {
       radius: 10,
-      color: '#003660',
+      color: '#682EC7',
       weight: 3,
-      fillColor: '#1863dc',
-      fillOpacity: 0.9,
+      fillColor: '#ffffff',
+      fillOpacity: 0.95,
     })
       .addTo(map)
       .bindTooltip('Sede da equipe', { permanent: false });
 
     // Linha da rota (tracejada)
     L.polyline(pts, {
-      color: '#1863dc',
+      color: '#682EC7',
       weight: 3,
-      opacity: 0.6,
+      opacity: 0.55,
       dashArray: '6,8',
     }).addTo(map);
 
@@ -107,8 +107,8 @@ export function AgendaMap({ agenda }: Props) {
   return (
     <div
       ref={containerRef}
-      className="w-full rounded-lg overflow-hidden"
-      style={{ height: '420px', border: '1px solid var(--grey-mid)' }}
+      className="w-full rounded-2xl overflow-hidden"
+      style={{ height: '420px', border: '1px solid rgba(255,255,255,0.06)' }}
     />
   );
 }

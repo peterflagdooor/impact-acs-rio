@@ -4,61 +4,60 @@ interface Props {
   data: InvisivelResponse;
 }
 
-const LABELS: Record<1 | 2 | 3, { titulo: string; descricao: string; tom: 'red' | 'orange' | 'yellow' }> = {
+const LABELS: Record<1 | 2 | 3, { titulo: string; descricao: string; accent: string; bg: string }> = {
   1: {
     titulo: 'Crise sem vínculo',
     descricao: '3+ urgências e zero visita do ACS no ano',
-    tom: 'red',
+    accent: 'var(--red)',
+    bg: 'rgba(255,77,109,0.10)',
   },
   2: {
     titulo: 'Alto risco sem contato',
-    descricao: 'Gestante, criança 0-6, hipertenso, diabético, idoso ou vulnerável sem visita',
-    tom: 'orange',
+    descricao: 'Gestante, criança, hipertenso, diabético, idoso ou vulnerável sem visita',
+    accent: 'var(--orange)',
+    bg: 'rgba(255,159,10,0.10)',
   },
   3: {
     titulo: 'Sem contato',
     descricao: 'Sem condição especial, mas zero visita',
-    tom: 'yellow',
+    accent: 'var(--purple-light)',
+    bg: 'rgba(104,46,199,0.10)',
   },
 };
-
-function tomToStyles(tom: 'red' | 'orange' | 'yellow') {
-  if (tom === 'red')    return { bg: 'var(--p1-bg)', text: 'var(--p1-text)', border: 'var(--p1-border)' };
-  if (tom === 'orange') return { bg: 'var(--p2-bg)', text: 'var(--p2-text)', border: 'var(--p2-border)' };
-  return                       { bg: 'var(--p3-bg)', text: 'var(--p3-text)', border: 'var(--p3-border)' };
-}
 
 export function InvisivelCounters({ data }: Props) {
   if (data.total === 0) {
     return (
-      <div className="rounded-lg p-6 text-sm" style={{ background: 'var(--grey-card)', color: 'var(--grey-text)' }}>
-        Sem invisíveis detectados ainda. Recalcular scores primeiro para popular as categorias.
+      <div
+        className="rounded-xl p-5 text-sm"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
+      >
+        Sem invisíveis detectados. Recalcular scores primeiro.
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
       {([1, 2, 3] as const).map(cat => {
         const meta = LABELS[cat];
-        const s = tomToStyles(meta.tom);
         const n = data.por_categoria[cat];
         return (
           <div
             key={cat}
-            className="rounded-lg p-5"
-            style={{ background: s.bg, borderLeft: `4px solid ${s.border}` }}
+            className="rounded-xl p-4"
+            style={{ background: meta.bg, borderLeft: `3px solid ${meta.accent}` }}
           >
-            <p className="text-xs font-bold uppercase tracking-wider" style={{ color: s.text }}>
+            <p className="text-[10px] font-semibold uppercase tracking-wider" style={{ color: meta.accent }}>
               Categoria {cat}
             </p>
-            <p className="text-4xl font-black mt-2" style={{ color: s.text }}>
+            <p className="text-3xl font-bold mt-1.5" style={{ color: meta.accent }}>
               {n.toLocaleString('pt-BR')}
             </p>
-            <p className="text-sm font-bold mt-2" style={{ color: 'var(--grey-dark)' }}>
+            <p className="text-sm font-semibold mt-2" style={{ color: 'var(--text)' }}>
               {meta.titulo}
             </p>
-            <p className="text-xs mt-1 leading-snug" style={{ color: 'var(--grey-text)' }}>
+            <p className="text-xs mt-1 leading-snug" style={{ color: 'var(--text-muted)' }}>
               {meta.descricao}
             </p>
           </div>

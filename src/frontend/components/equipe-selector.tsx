@@ -22,16 +22,19 @@ export function EquipeSelector({ equipes, initialEquipe, initialCapacidade }: Pr
   }
 
   return (
-    <div className="flex flex-col md:flex-row gap-3 items-stretch md:items-end p-4 rounded-lg" style={{ background: 'var(--grey-card)' }}>
+    <div
+      className="flex flex-col md:flex-row gap-3 items-stretch md:items-end p-5 rounded-2xl"
+      style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
+    >
       <div className="flex-1 min-w-0">
-        <label className="block text-xs font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--blue-dark)' }}>
+        <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-muted)' }}>
           Equipe
         </label>
         <select
           value={equipe}
           onChange={e => setEquipe(e.target.value)}
-          className="w-full px-3 py-2 rounded-md font-mono text-sm"
-          style={{ background: 'var(--white)', border: '1px solid var(--grey-mid)', color: 'var(--grey-dark)' }}
+          className="w-full px-3 py-2.5 rounded-xl font-mono text-sm focus:outline-none"
+          style={{ background: 'var(--bg-card-2)', border: '1px solid var(--border-subtle)', color: 'var(--text)' }}
         >
           <option value="">— Selecionar equipe —</option>
           {equipes.map(e => (
@@ -42,7 +45,7 @@ export function EquipeSelector({ equipes, initialEquipe, initialCapacidade }: Pr
         </select>
       </div>
       <div className="w-full md:w-28">
-        <label className="block text-xs font-bold uppercase tracking-wider mb-1" style={{ color: 'var(--blue-dark)' }}>
+        <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-muted)' }}>
           Capacidade
         </label>
         <input
@@ -51,17 +54,17 @@ export function EquipeSelector({ equipes, initialEquipe, initialCapacidade }: Pr
           max={50}
           value={capacidade}
           onChange={e => setCapacidade(Number(e.target.value))}
-          className="w-full px-3 py-2 rounded-md text-sm"
-          style={{ background: 'var(--white)', border: '1px solid var(--grey-mid)', color: 'var(--grey-dark)' }}
+          className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none"
+          style={{ background: 'var(--bg-card-2)', border: '1px solid var(--border-subtle)', color: 'var(--text)' }}
         />
       </div>
       <button
         onClick={gerar}
         disabled={!equipe}
-        className="px-5 py-2 rounded-md font-bold uppercase tracking-wider text-sm whitespace-nowrap transition-opacity"
+        className="px-5 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-opacity"
         style={{
-          background: equipe ? 'var(--blue-light)' : 'var(--grey-mid)',
-          color: 'var(--white)',
+          background: equipe ? 'var(--purple)' : 'var(--bg-card-2)',
+          color: equipe ? '#fff' : 'var(--text-muted)',
           opacity: equipe ? 1 : 0.6,
           cursor: equipe ? 'pointer' : 'not-allowed',
         }}

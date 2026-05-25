@@ -1,152 +1,116 @@
 @import "tailwindcss";
 
-/* Cera Pro font face */
-@font-face {
-  font-family: 'Cera Pro';
-  src: url('/fonts/CeraPro-Light.otf') format('opentype');
-  font-weight: 300;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Cera Pro';
-  src: url('/fonts/CeraPro-Medium.otf') format('opentype');
-  font-weight: 500;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Cera Pro';
-  src: url('/fonts/CeraPro-Bold.otf') format('opentype');
-  font-weight: 700;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Cera Pro';
-  src: url('/fonts/CeraPro-Black.otf') format('opentype');
-  font-weight: 900;
-  font-style: normal;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Cera Pro';
-  src: url('/fonts/CeraPro-RegularItalic.otf') format('opentype');
-  font-weight: 400;
-  font-style: italic;
-  font-display: swap;
-}
-@font-face {
-  font-family: 'Cera Pro';
-  src: url('/fonts/CeraPro-BlackItalic.otf') format('opentype');
-  font-weight: 900;
-  font-style: italic;
-  font-display: swap;
-}
-
-/* Brand tokens */
+/* Dark dashboard theme tokens */
 :root {
-  /* Core palette */
-  --blue-primary:   #004a80;
-  --blue-secondary: #00508a;
-  --blue-dark:      #003660;
-  --blue-light:     #1863dc;
-  --cyan-accent:    #00c0f4;
-  --green-accent:   #0bb975;
+  --bg-page:        #06071A;
+  --bg-card:        #191A30;
+  --bg-card-2:      #282939;
+  --border-subtle:  rgba(255,255,255,0.06);
 
-  /* Neutrals */
-  --grey-bar:       #363636;
-  --grey-card:      #ededed;
-  --grey-mid:       #cac7c7;
-  --grey-text:      #333333;
-  --grey-dark:      #181818;
-  --white:          #ffffff;
+  --text:           #E0E1EE;
+  --text-muted:     #74769A;
 
-  /* Priority palette */
-  --priority-1: #dc3545; /* Urgente */
-  --priority-2: #fd7e14; /* Alto */
-  --priority-3: #ffc107; /* Médio */
-  --priority-4: #28a745; /* Rotina */
+  --purple:         #682EC7;
+  --purple-mid:     #7C3FD9;
+  --purple-light:   #9B6FE8;
+  --purple-glow:    rgba(104,46,199,0.40);
 
-  /* Spacing 8pt */
-  --space-1: 4px;
-  --space-2: 8px;
-  --space-3: 12px;
-  --space-4: 16px;
-  --space-5: 24px;
-  --space-6: 32px;
-  --space-7: 48px;
-  --space-8: 64px;
-  --space-9: 96px;
+  --green:          #7DE260;
+  --orange:         #FF9F0A;
+  --red:            #FF4D6D;
 
-  /* Radius */
-  --radius-sm: 4px;
-  --radius-md: 8px;
-  --radius-lg: 16px;
-  --radius-pill: 999px;
+  /* Legacy priority tokens (keep for components that reference them) */
+  --p1-bg:     rgba(255,77,109,0.12);
+  --p1-text:   #FF4D6D;
+  --p1-border: rgba(255,77,109,0.35);
 
-  /* Shadows */
-  --shadow-sm:  0 1px 3px rgba(0,0,0,.12);
-  --shadow-md:  0 4px 12px rgba(0,74,128,.15);
-  --shadow-lg:  0 8px 32px rgba(0,74,128,.20);
+  --p2-bg:     rgba(104,46,199,0.12);
+  --p2-text:   #9B6FE8;
+  --p2-border: rgba(104,46,199,0.35);
+
+  --p3-bg:     rgba(255,159,10,0.12);
+  --p3-text:   #FF9F0A;
+  --p3-border: rgba(255,159,10,0.35);
+
+  --p4-bg:     rgba(125,226,96,0.10);
+  --p4-text:   #7DE260;
+  --p4-border: rgba(125,226,96,0.25);
 }
 
-/* Tailwind v4 theme extension */
+/* Tailwind v4 theme — expose CSS vars as Tailwind color utilities */
 @theme inline {
-  --font-sans: 'Cera Pro', 'Segoe UI', Arial, sans-serif;
+  --font-rubik: var(--font-rubik-var, 'Rubik', sans-serif);
+  --font-sans:  var(--font-rubik-var, 'Rubik', sans-serif);
 
-  --color-brand-blue-primary:   var(--blue-primary);
-  --color-brand-blue-secondary: var(--blue-secondary);
-  --color-brand-blue-dark:      var(--blue-dark);
-  --color-brand-blue-light:     var(--blue-light);
-  --color-brand-cyan:           var(--cyan-accent);
-  --color-brand-green:          var(--green-accent);
+  --color-bg-page:       var(--bg-page);
+  --color-bg-card:       var(--bg-card);
+  --color-bg-card-2:     var(--bg-card-2);
 
-  --color-priority-1:           var(--priority-1);
-  --color-priority-2:           var(--priority-2);
-  --color-priority-3:           var(--priority-3);
-  --color-priority-4:           var(--priority-4);
+  --color-text:          var(--text);
+  --color-text-muted:    var(--text-muted);
 
-  --color-grey-bar:             var(--grey-bar);
-  --color-grey-card:            var(--grey-card);
-  --color-grey-mid:             var(--grey-mid);
-  --color-grey-text:            var(--grey-text);
-  --color-grey-dark:            var(--grey-dark);
+  --color-purple:        var(--purple);
+  --color-purple-mid:    var(--purple-mid);
+  --color-purple-light:  var(--purple-light);
+
+  --color-green:         var(--green);
+  --color-orange:        var(--orange);
+  --color-red:           var(--red);
+
+  /* Keeping a few legacy brand refs so no compile errors in components */
+  --color-brand-blue-primary:   #004a80;
+  --color-brand-blue-secondary: #00508a;
+  --color-brand-blue-dark:      #003660;
+  --color-brand-blue-light:     #1863dc;
+  --color-brand-cyan:           #00c0f4;
+  --color-brand-green:          #7DE260;
+  --color-priority-1:           var(--red);
+  --color-priority-2:           var(--orange);
+  --color-priority-3:           #FFD60A;
+  --color-priority-4:           var(--green);
+  --color-grey-bar:             #282939;
+  --color-grey-card:            var(--bg-card-2);
+  --color-grey-mid:             rgba(255,255,255,0.10);
+  --color-grey-text:            var(--text-muted);
+  --color-grey-dark:            var(--text);
 }
 
 html, body {
-  font-family: 'Cera Pro', 'Segoe UI', Arial, sans-serif;
-  color: var(--grey-dark);
-  background: var(--white);
+  background: var(--bg-page);
+  color: var(--text);
 }
 
-/* Reusable utility classes */
+/* Scrollbar */
+::-webkit-scrollbar { width: 6px; height: 6px; }
+::-webkit-scrollbar-track { background: var(--bg-card); }
+::-webkit-scrollbar-thumb { background: var(--bg-card-2); border-radius: 3px; }
+::-webkit-scrollbar-thumb:hover { background: var(--purple); }
+
+/* Legacy typography helpers — kept so existing pages compile */
 .t-eyebrow {
   font-size: 11px;
-  font-weight: 700;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.15em;
-  color: var(--grey-text);
+  letter-spacing: 0.12em;
+  color: var(--text-muted);
 }
 
 .t-section-label {
-  font-size: 13px;
-  font-weight: 700;
+  font-size: 11px;
+  font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.15em;
-  color: var(--blue-primary);
+  color: var(--purple-light);
 }
 
 .t-section-title {
-  font-size: 40px;
-  font-weight: 900;
-  color: var(--blue-secondary);
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--text);
   line-height: 1.2;
 }
 
 .t-nav-link {
   font-size: 13px;
-  font-weight: 700;
-  text-transform: uppercase;
-  letter-spacing: 0.08em;
+  font-weight: 500;
 }

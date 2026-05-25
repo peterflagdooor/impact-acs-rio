@@ -1,6 +1,14 @@
 import type { Metadata } from 'next';
+import { Rubik } from 'next/font/google';
 import './globals.css';
-import { Topbar } from '@/components/topbar';
+import { Sidebar } from '@/components/sidebar';
+
+const rubik = Rubik({
+  subsets: ['latin'],
+  weight: ['300', '400', '500', '600', '700'],
+  variable: '--font-rubik-var',
+  display: 'swap',
+});
 
 export const metadata: Metadata = {
   title: 'ACS Inteligente — SMS Rio',
@@ -9,10 +17,14 @@ export const metadata: Metadata = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="pt-BR">
-      <body>
-        <Topbar />
-        <main className="max-w-7xl mx-auto px-6 py-8">{children}</main>
+    <html lang="pt-BR" className={rubik.variable}>
+      <body className="bg-bg-page text-text antialiased">
+        <div className="flex min-h-screen">
+          <Sidebar />
+          <main className="flex-1 px-8 py-6 ml-[240px] min-h-screen overflow-x-hidden">
+            {children}
+          </main>
+        </div>
       </body>
     </html>
   );

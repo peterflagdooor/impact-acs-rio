@@ -30,20 +30,22 @@ export function HeatmapMap({ hotspots, equipes }: Props) {
 
     const map = L.map(containerRef.current).setView([-22.93, -43.25], 13);
 
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '© OpenStreetMap',
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+      attribution: '© OpenStreetMap, © CartoDB',
       maxZoom: 19,
     }).addTo(map);
 
-    // Hotspots de urgência (vermelho)
+    // Hotspots de urgência — purple → orange → red gradient
     const maxN = Math.max(...hotspots.map(p => p.n_urgencias), 1);
     for (const p of hotspots) {
       const r = 4 + (p.n_urgencias / maxN) * 14;
-      const opacity = 0.35 + (p.n_urgencias / maxN) * 0.45;
+      const ratio = p.n_urgencias / maxN;
+      const fillColor = ratio > 0.6 ? '#FF4D6D' : ratio > 0.3 ? '#FF9F0A' : '#682EC7';
+      const opacity = 0.40 + ratio * 0.45;
       L.circleMarker([p.lat, p.lng], {
         radius: r,
-        color: '#dc2626',
-        fillColor: '#ef4444',
+        color: fillColor,
+        fillColor,
         fillOpacity: opacity,
         weight: 1,
       })
@@ -51,14 +53,14 @@ export function HeatmapMap({ hotspots, equipes }: Props) {
         .bindPopup(`<strong>${p.n_urgencias}</strong> urgências/internações nesta célula`);
     }
 
-    // Sedes das equipes (azul) — clicar pede isócrona
+    // Sedes das equipes — white with purple ring
     for (const eq of equipes) {
       const marker = L.circleMarker([eq.lat, eq.lng], {
         radius: 7,
-        color: '#004a80',
-        fillColor: '#1863dc',
-        fillOpacity: 0.9,
-        weight: 2,
+        color: '#682EC7',
+        fillColor: '#ffffff',
+        fillOpacity: 0.95,
+        weight: 3,
       }).addTo(map);
 
       marker.bindPopup(`
@@ -119,22 +121,32 @@ export function HeatmapMap({ hotspots, equipes }: Props) {
 
   return (
     <div className="relative">
-      <div ref={containerRef} className="w-full h-[500px] rounded-md border border-grey-mid" />
+      <div
+        ref={containerRef}
+        className="w-full h-[500px] rounded-2xl overflow-hidden"
+        style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+      />
       {loadingIso && (
-        <div className="absolute top-3 right-3 bg-white px-3 py-2 rounded-sm shadow-md text-xs font-bold text-brand-blue-primary">
+        <div
+          className="absolute top-3 right-3 px-3 py-2 rounded-xl text-xs font-semibold animate-pulse"
+          style={{ background: 'rgba(25,26,48,0.90)', color: '#9B6FE8', border: '1px solid rgba(104,46,199,0.25)' }}
+        >
           Calculando alcance…
         </div>
       )}
-      <div className="absolute bottom-3 left-3 bg-white/95 px-3 py-2 rounded-sm shadow-sm text-xs flex gap-4 items-center">
-        <span className="flex items-center gap-1">
-          <span className="inline-block w-3 h-3 rounded-full bg-red-500 opacity-70"></span>
+      <div
+        className="absolute bottom-3 left-3 px-3 py-2 rounded-xl text-xs flex gap-4 items-center"
+        style={{ background: 'rgba(25,26,48,0.90)', border: '1px solid rgba(255,255,255,0.08)', color: '#E0E1EE' }}
+      >
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block w-3 h-3 rounded-full" style={{ background: '#FF4D6D', opacity: 0.8 }}></span>
           Hotspot urgência
         </span>
-        <span className="flex items-center gap-1">
-          <span className="inline-block w-3 h-3 rounded-full bg-brand-blue-light border-2 border-brand-blue-primary"></span>
+        <span className="flex items-center gap-1.5">
+          <span className="inline-block w-3 h-3 rounded-full border-2" style={{ background: '#fff', borderColor: '#682EC7' }}></span>
           Sede equipe
         </span>
-        <span className="text-grey-text">Clique numa sede pra ver alcance a pé</span>
+        <span style={{ color: '#74769A' }}>Clique numa sede pra ver alcance a pé</span>
       </div>
     </div>
   );

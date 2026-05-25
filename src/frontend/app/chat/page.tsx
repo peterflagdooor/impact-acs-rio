@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
+import { Send, Bot, User } from 'lucide-react';
 
 interface Message {
   role: 'user' | 'assistant';
@@ -53,9 +54,8 @@ export default function ChatPage() {
         if (done) break;
         buffer += decoder.decode(value, { stream: true });
 
-        // SSE: linhas separadas por \n\n. Cada bloco: "event: X\ndata: Y"
         const blocks = buffer.split('\n\n');
-        buffer = blocks.pop() ?? '';  // último pode ser parcial
+        buffer = blocks.pop() ?? '';
         for (const block of blocks) {
           const lines = block.split('\n');
           let event: string | null = null;
@@ -76,79 +76,123 @@ export default function ChatPage() {
         }
       }
     } catch (err) {
-      setMessages(m => [...m, { role: 'assistant', content: `❌ Erro: ${(err as Error).message}` }]);
+      setMessages(m => [...m, { role: 'assistant', content: `Erro: ${(err as Error).message}` }]);
     } finally {
       setLoading(false);
     }
   }
 
   return (
-    <div className="flex flex-col h-[calc(100vh-200px)]">
-      <header className="mb-6">
+    <div className="flex flex-col h-[calc(100vh-96px)]">
+      {/* Header */}
+      <div className="mb-6">
         <p className="t-section-label">Reunião Semanal</p>
-        <h1 className="t-section-title">Chat IA</h1>
-        <p className="text-grey-text mt-3 max-w-2xl">
-          Pergunte sobre o território, prioridades, alertas, cobertura por grupo populacional.
-          A IA consulta o banco em tempo real via ferramentas read-only.
+        <h1 className="text-3xl font-bold mt-1" style={{ color: 'var(--text)' }}>
+          Chat IA
+        </h1>
+        <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+          Pergunte sobre o território, prioridades, alertas e cobertura.
         </p>
-      </header>
+      </div>
 
+      {/* Suggestions */}
       {messages.length === 0 && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-6">
           {SUGESTOES.map(s => (
             <button
               key={s}
               onClick={() => send(s)}
-              className="text-left p-4 bg-white border border-grey-mid rounded-md hover:bg-grey-card hover:shadow-sm transition text-sm"
+              className="text-left p-4 rounded-2xl text-sm transition-all hover:border-purple/40"
+              style={{
+                background: 'var(--bg-card)',
+                border: '1px solid var(--border-subtle)',
+                color: 'var(--text)',
+              }}
             >
-              <span className="text-brand-blue-light font-bold">💡</span> {s}
+              <span style={{ color: 'var(--purple-light)', fontWeight: 600 }}>💡</span>{' '}
+              {s}
             </button>
           ))}
         </div>
       )}
 
-      <div className="flex-1 overflow-y-auto space-y-4 mb-4 px-1">
+      {/* Message thread */}
+      <div className="flex-1 overflow-y-auto space-y-4 mb-4 pr-1">
         {messages.map((m, i) => (
           <div
             key={i}
-            className={`p-4 rounded-md max-w-[85%] ${
-              m.role === 'user'
-                ? 'ml-auto bg-brand-blue-primary text-white'
-                : 'bg-white border border-grey-mid'
-            }`}
+            className={`flex gap-3 max-w-[88%] ${m.role === 'user' ? 'ml-auto flex-row-reverse' : ''}`}
           >
-            <div className={`text-xs font-bold uppercase tracking-wide mb-2 ${m.role === 'user' ? 'text-white/80' : 'text-brand-blue-primary'}`}>
-              {m.role === 'user' ? '👤 Você' : '🤖 IA'}
+            {/* Avatar */}
+            <div
+              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+              style={{
+                background: m.role === 'user' ? 'var(--purple)' : 'var(--bg-card-2)',
+                border: '1px solid var(--border-subtle)',
+              }}
+            >
+              {m.role === 'user'
+                ? <User size={14} color="#fff" />
+                : <Bot size={14} style={{ color: 'var(--purple-light)' }} />
+              }
             </div>
-            <div className="whitespace-pre-wrap text-sm leading-relaxed">{m.content}</div>
+
+            {/* Bubble */}
+            <div
+              className="px-4 py-3 rounded-2xl text-sm leading-relaxed"
+              style={
+                m.role === 'user'
+                  ? { background: 'var(--purple)', color: '#fff' }
+                  : { background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text)' }
+              }
+            >
+              <div className="whitespace-pre-wrap">{m.content}</div>
+            </div>
           </div>
         ))}
-        {loading && messages[messages.length - 1]?.content === '' && (
-          <div className="p-4 rounded-md bg-white border border-grey-mid max-w-[85%]">
-            <div className="text-xs font-bold uppercase tracking-wide text-brand-blue-primary mb-2">🤖 IA</div>
-            <div className="text-sm italic text-grey-text">pensando…</div>
+
+        {/* Thinking indicator */}
+        {loading && (
+          <div className="flex gap-3 max-w-[88%]">
+            <div
+              className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
+              style={{ background: 'var(--bg-card-2)', border: '1px solid var(--border-subtle)' }}
+            >
+              <Bot size={14} style={{ color: 'var(--purple-light)' }} />
+            </div>
+            <div
+              className="px-4 py-3 rounded-2xl text-sm"
+              style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
+            >
+              <span className="animate-pulse">pensando…</span>
+            </div>
           </div>
         )}
+
         <div ref={endRef} />
       </div>
 
+      {/* Input bar */}
       <form
         onSubmit={(e) => { e.preventDefault(); send(input); }}
-        className="flex gap-2 sticky bottom-0 bg-white p-3 rounded-md border border-grey-mid shadow-sm"
+        className="flex gap-2 p-3 rounded-2xl"
+        style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
       >
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Pergunte alguma coisa..."
+          placeholder="Pergunte alguma coisa…"
           disabled={loading}
-          className="flex-1 px-3 py-2 border border-grey-mid rounded-sm focus:outline-none focus:border-brand-blue-primary text-sm"
+          className="flex-1 bg-transparent px-2 py-1.5 text-sm focus:outline-none placeholder:opacity-40"
+          style={{ color: 'var(--text)' }}
         />
         <button
           type="submit"
           disabled={loading || !input.trim()}
-          className="px-5 py-2 bg-brand-blue-primary text-white rounded-sm font-bold text-xs uppercase tracking-wide disabled:opacity-50 hover:bg-brand-blue-dark transition"
+          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-opacity disabled:opacity-40 hover:opacity-80"
+          style={{ background: 'var(--purple)', color: '#fff' }}
         >
-          Enviar
+          <Send size={15} />
         </button>
       </form>
     </div>
