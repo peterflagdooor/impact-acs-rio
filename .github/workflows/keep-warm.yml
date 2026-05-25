@@ -1,0 +1,20 @@
+name: Keep Render backend warm
+
+# Pinga o backend a cada 10 minutos pra impedir que Render free tier durma.
+# Render dorme apos ~15 min de inatividade - primeira request leva ~30s pra acordar.
+# 10 min < 15 min garante warm sempre que possivel.
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:  # permite trigger manual via UI do GitHub
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Ping backend health endpoint
+        run: |
+          echo "Pinging https://impact-acs-backend.onrender.com/"
+          curl -fsS "https://impact-acs-backend.onrender.com/" -o /dev/null -w "HTTP %{http_code} in %{time_total}s\n"
