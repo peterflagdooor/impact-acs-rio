@@ -24,17 +24,17 @@ export function EquipeSelector({ equipes, initialEquipe, initialCapacidade }: Pr
   return (
     <div
       className="flex flex-col md:flex-row gap-3 items-stretch md:items-end p-5 rounded-2xl"
-      style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
+      style={{ background: 'var(--white)', border: '1px solid var(--grey-card)' }}
     >
       <div className="flex-1 min-w-0">
-        <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-muted)' }}>
+        <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: 'var(--grey-text)' }}>
           Equipe
         </label>
         <select
           value={equipe}
           onChange={e => setEquipe(e.target.value)}
           className="w-full px-3 py-2.5 rounded-xl font-mono text-sm focus:outline-none"
-          style={{ background: 'var(--bg-card-2)', border: '1px solid var(--border-subtle)', color: 'var(--text)' }}
+          style={{ background: 'var(--grey-card)', border: '1px solid var(--grey-mid)', color: 'var(--grey-dark)' }}
         >
           <option value="">— Selecionar equipe —</option>
           {equipes.map(e => (
@@ -45,7 +45,7 @@ export function EquipeSelector({ equipes, initialEquipe, initialCapacidade }: Pr
         </select>
       </div>
       <div className="w-full md:w-28">
-        <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: 'var(--text-muted)' }}>
+        <label className="block text-xs font-semibold uppercase tracking-wider mb-1.5" style={{ color: 'var(--grey-text)' }}>
           Capacidade
         </label>
         <input
@@ -55,7 +55,7 @@ export function EquipeSelector({ equipes, initialEquipe, initialCapacidade }: Pr
           value={capacidade}
           onChange={e => setCapacidade(Number(e.target.value))}
           className="w-full px-3 py-2.5 rounded-xl text-sm focus:outline-none"
-          style={{ background: 'var(--bg-card-2)', border: '1px solid var(--border-subtle)', color: 'var(--text)' }}
+          style={{ background: 'var(--grey-card)', border: '1px solid var(--grey-mid)', color: 'var(--grey-dark)' }}
         />
       </div>
       <button
@@ -63,8 +63,8 @@ export function EquipeSelector({ equipes, initialEquipe, initialCapacidade }: Pr
         disabled={!equipe}
         className="px-5 py-2.5 rounded-xl font-semibold text-sm whitespace-nowrap transition-opacity"
         style={{
-          background: equipe ? 'var(--purple)' : 'var(--bg-card-2)',
-          color: equipe ? '#fff' : 'var(--text-muted)',
+          background: equipe ? 'var(--blue-primary)' : 'var(--grey-card)',
+          color: equipe ? '#fff' : 'var(--grey-text)',
           opacity: equipe ? 1 : 0.6,
           cursor: equipe ? 'pointer' : 'not-allowed',
         }}

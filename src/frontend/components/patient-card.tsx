@@ -12,13 +12,13 @@ export function PatientRow({ patient, rank }: { patient: Paciente; rank?: number
 
   return (
     <tr
-      className="border-b group transition-colors"
-      style={{ borderColor: 'var(--border-subtle)' }}
+      className="border-b group transition-colors hover:bg-[#fafafa]"
+      style={{ borderColor: 'var(--grey-card)' }}
     >
       {rank !== undefined && (
         <td
           className="px-4 py-3 text-xs font-mono"
-          style={{ color: 'var(--text-muted)' }}
+          style={{ color: 'var(--grey-text)' }}
         >
           {rank}
         </td>
@@ -27,7 +27,7 @@ export function PatientRow({ patient, rank }: { patient: Paciente; rank?: number
         <Link
           href={`/pacientes/${patient.paciente_id}`}
           className="font-mono text-xs hover:underline"
-          style={{ color: 'var(--purple-light)' }}
+          style={{ color: 'var(--blue-light)' }}
         >
           #{patient.paciente_id.slice(0, 8)}…
         </Link>
@@ -35,10 +35,10 @@ export function PatientRow({ patient, rank }: { patient: Paciente; rank?: number
       <td className="px-4 py-3">
         <ScoreBadge score={patient.score} />
       </td>
-      <td className="px-4 py-3 text-sm" style={{ color: 'var(--text)' }}>
+      <td className="px-4 py-3 text-sm" style={{ color: 'var(--grey-dark)' }}>
         {patient.faixa_etaria}
       </td>
-      <td className="px-4 py-3 text-sm" style={{ color: 'var(--text-muted)' }}>
+      <td className="px-4 py-3 text-sm" style={{ color: 'var(--grey-text)' }}>
         {patient.sexo}
       </td>
       <td className="px-4 py-3">
@@ -47,7 +47,7 @@ export function PatientRow({ patient, rank }: { patient: Paciente; rank?: number
           {tagKinds.length > 3 && (
             <span
               className="text-xs px-2 py-0.5 rounded-full"
-              style={{ background: 'var(--bg-card-2)', color: 'var(--text-muted)' }}
+              style={{ background: 'var(--grey-card)', color: 'var(--grey-text)' }}
             >
               +{tagKinds.length - 3}
             </span>
@@ -58,7 +58,7 @@ export function PatientRow({ patient, rank }: { patient: Paciente; rank?: number
         <Link
           href={`/pacientes/${patient.paciente_id}`}
           className="text-xs px-3 py-1.5 rounded-lg font-medium transition-opacity hover:opacity-80"
-          style={{ background: 'rgba(104,46,199,0.15)', color: 'var(--purple-light)' }}
+          style={{ background: 'rgba(0,74,128,0.10)', color: 'var(--blue-primary)' }}
         >
           Ver
         </Link>
@@ -71,10 +71,10 @@ export function PatientRow({ patient, rank }: { patient: Paciente; rank?: number
 export function PatientCard({ patient }: { patient: Paciente }) {
   const priority = scoreToPriority(patient.score);
   const accentColor = {
-    1: 'var(--red)',
-    2: 'var(--purple-light)',
-    3: 'var(--orange)',
-    4: 'var(--green)',
+    1: 'var(--priority-1)',
+    2: 'var(--priority-2)',
+    3: 'var(--priority-3)',
+    4: 'var(--priority-4)',
   }[priority];
 
   const tagKinds = Array.from(new Set(patient.fatores.map(factorToTagKind)));
@@ -82,26 +82,27 @@ export function PatientCard({ patient }: { patient: Paciente }) {
   return (
     <Link
       href={`/pacientes/${patient.paciente_id}`}
-      className="block rounded-2xl p-5 transition-all duration-150 hover:border-purple/30"
+      className="block rounded-2xl p-5 transition-all duration-150"
       style={{
-        background: 'var(--bg-card)',
-        border: '1px solid var(--border-subtle)',
+        background: 'var(--white)',
+        border: '1px solid var(--grey-card)',
+        boxShadow: '0 1px 3px rgba(0,0,0,.06)',
         textDecoration: 'none',
         color: 'inherit',
       }}
     >
       <div className="flex justify-between items-start mb-3">
         <div>
-          <p className="text-xs font-mono" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-xs font-mono" style={{ color: 'var(--grey-text)' }}>
             #{patient.paciente_id.slice(0, 8)}… · Eq #{patient.equipe_id.slice(0, 6)}
           </p>
-          <p className="font-semibold text-sm mt-1" style={{ color: 'var(--text)' }}>
+          <p className="font-semibold text-sm mt-1" style={{ color: 'var(--grey-dark)' }}>
             {patient.faixa_etaria} · {patient.sexo}
           </p>
         </div>
         <ScoreBadge score={patient.score} />
       </div>
-      <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--text-muted)' }}>
+      <p className="text-xs leading-relaxed mb-3" style={{ color: 'var(--grey-text)' }}>
         {patient.ultima_visita
           ? `Última visita: ${patient.ultima_visita}`
           : 'Nunca recebeu visita do ACS.'}

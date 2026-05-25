@@ -29,10 +29,10 @@ export default async function Dashboard() {
       <div className="flex items-start justify-between">
         <div>
           <p className="t-section-label">Reunião Semanal</p>
-          <h1 className="text-3xl font-bold mt-1" style={{ color: 'var(--text)' }}>
+          <h1 className="text-3xl font-bold mt-1" style={{ color: 'var(--grey-dark)' }}>
             Inteligência no Território
           </h1>
-          <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+          <p className="text-sm mt-2" style={{ color: 'var(--grey-text)' }}>
             Visão do território — {dayLabel}
           </p>
         </div>
@@ -40,9 +40,9 @@ export default async function Dashboard() {
           {/* Notification chip */}
           <div
             className="relative w-9 h-9 rounded-xl flex items-center justify-center cursor-pointer hover:opacity-80 transition-opacity"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
+            style={{ background: 'var(--white)', border: '1px solid var(--grey-card)' }}
           >
-            <Bell size={16} style={{ color: 'var(--text-muted)' }} />
+            <Bell size={16} style={{ color: 'var(--grey-text)' }} />
             {kpis.alertas_abertos > 0 && (
               <span
                 className="absolute -top-1 -right-1 w-4 h-4 rounded-full text-[9px] font-bold flex items-center justify-center"
@@ -55,11 +55,11 @@ export default async function Dashboard() {
           {/* Profile chip */}
           <div
             className="flex items-center gap-2 px-3 py-2 rounded-xl text-sm font-medium cursor-pointer hover:opacity-80 transition-opacity"
-            style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text)' }}
+            style={{ background: 'var(--white)', border: '1px solid var(--grey-card)', color: 'var(--grey-dark)' }}
           >
             <div
               className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold"
-              style={{ background: 'var(--purple)', color: '#fff' }}
+              style={{ background: 'var(--blue-primary)', color: '#fff' }}
             >
               A
             </div>
@@ -98,13 +98,13 @@ export default async function Dashboard() {
         {/* Table takes 2 cols */}
         <div
           className="lg:col-span-2 rounded-2xl overflow-hidden"
-          style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
+          style={{ background: 'var(--white)', border: '1px solid var(--grey-card)' }}
         >
-          <div className="px-6 py-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
-            <h2 className="font-semibold text-base" style={{ color: 'var(--text)' }}>
+          <div className="px-6 py-4 border-b" style={{ borderColor: 'var(--grey-card)' }}>
+            <h2 className="font-semibold text-base" style={{ color: 'var(--grey-dark)' }}>
               Top Prioridades
             </h2>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--grey-text)' }}>
               {topPatients.length} pacientes de maior score
             </p>
           </div>
@@ -113,7 +113,7 @@ export default async function Dashboard() {
               <thead>
                 <tr
                   className="text-left text-xs font-semibold uppercase tracking-wider"
-                  style={{ background: 'rgba(255,255,255,0.02)', color: 'var(--text-muted)' }}
+                  style={{ background: 'var(--grey-card)', color: 'var(--grey-text)' }}
                 >
                   <th className="px-4 py-3">#</th>
                   <th className="px-4 py-3">Paciente ID</th>
@@ -136,13 +136,13 @@ export default async function Dashboard() {
         {/* Right: Invisíveis */}
         <div
           className="rounded-2xl overflow-hidden"
-          style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
+          style={{ background: 'var(--white)', border: '1px solid var(--grey-card)' }}
         >
-          <div className="px-6 py-4 border-b" style={{ borderColor: 'var(--border-subtle)' }}>
-            <h2 className="font-semibold text-base" style={{ color: 'var(--text)' }}>
+          <div className="px-6 py-4 border-b" style={{ borderColor: 'var(--grey-card)' }}>
+            <h2 className="font-semibold text-base" style={{ color: 'var(--grey-dark)' }}>
               Pacientes Invisíveis
             </h2>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--grey-text)' }}>
               Total: {invisiveis.total.toLocaleString('pt-BR')}
             </p>
           </div>
@@ -156,10 +156,10 @@ export default async function Dashboard() {
       <section>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="font-semibold text-base" style={{ color: 'var(--text)' }}>
+            <h2 className="font-semibold text-base" style={{ color: 'var(--grey-dark)' }}>
               Pressão por Equipe
             </h2>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--grey-text)' }}>
               Ranking de pressão operacional — top 10 equipes
             </p>
           </div>
@@ -171,10 +171,10 @@ export default async function Dashboard() {
       <section>
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h2 className="font-semibold text-base" style={{ color: 'var(--text)' }}>
+            <h2 className="font-semibold text-base" style={{ color: 'var(--grey-dark)' }}>
               Mapa do Território
             </h2>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-xs mt-0.5" style={{ color: 'var(--grey-text)' }}>
               Hotspots de urgência · Sedes de equipe · Alcance a pé
             </p>
           </div>

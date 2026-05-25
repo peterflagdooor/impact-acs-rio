@@ -30,17 +30,17 @@ export function HeatmapMap({ hotspots, equipes }: Props) {
 
     const map = L.map(containerRef.current).setView([-22.93, -43.25], 13);
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap, © CartoDB',
       maxZoom: 19,
     }).addTo(map);
 
-    // Hotspots de urgência — purple → orange → red gradient
+    // Hotspots de urgência — red (alta) → orange (média) → yellow (baixa)
     const maxN = Math.max(...hotspots.map(p => p.n_urgencias), 1);
     for (const p of hotspots) {
       const r = 4 + (p.n_urgencias / maxN) * 14;
       const ratio = p.n_urgencias / maxN;
-      const fillColor = ratio > 0.6 ? '#FF4D6D' : ratio > 0.3 ? '#FF9F0A' : '#682EC7';
+      const fillColor = ratio > 0.6 ? '#dc3545' : ratio > 0.3 ? '#fd7e14' : '#ffc107';
       const opacity = 0.40 + ratio * 0.45;
       L.circleMarker([p.lat, p.lng], {
         radius: r,
@@ -53,12 +53,12 @@ export function HeatmapMap({ hotspots, equipes }: Props) {
         .bindPopup(`<strong>${p.n_urgencias}</strong> urgências/internações nesta célula`);
     }
 
-    // Sedes das equipes — white with purple ring
+    // Sedes das equipes — blue-primary fill + white border
     for (const eq of equipes) {
       const marker = L.circleMarker([eq.lat, eq.lng], {
         radius: 7,
-        color: '#682EC7',
-        fillColor: '#ffffff',
+        color: '#ffffff',
+        fillColor: '#004a80',
         fillOpacity: 0.95,
         weight: 3,
       }).addTo(map);
@@ -124,29 +124,29 @@ export function HeatmapMap({ hotspots, equipes }: Props) {
       <div
         ref={containerRef}
         className="w-full h-[500px] rounded-2xl overflow-hidden"
-        style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+        style={{ border: '1px solid var(--grey-card)' }}
       />
       {loadingIso && (
         <div
           className="absolute top-3 right-3 px-3 py-2 rounded-xl text-xs font-semibold animate-pulse"
-          style={{ background: 'rgba(25,26,48,0.90)', color: '#9B6FE8', border: '1px solid rgba(104,46,199,0.25)' }}
+          style={{ background: 'rgba(255,255,255,0.92)', color: 'var(--blue-primary)', border: '1px solid var(--grey-card)' }}
         >
           Calculando alcance…
         </div>
       )}
       <div
         className="absolute bottom-3 left-3 px-3 py-2 rounded-xl text-xs flex gap-4 items-center"
-        style={{ background: 'rgba(25,26,48,0.90)', border: '1px solid rgba(255,255,255,0.08)', color: '#E0E1EE' }}
+        style={{ background: 'rgba(255,255,255,0.92)', border: '1px solid var(--grey-card)', color: 'var(--grey-dark)' }}
       >
         <span className="flex items-center gap-1.5">
-          <span className="inline-block w-3 h-3 rounded-full" style={{ background: '#FF4D6D', opacity: 0.8 }}></span>
+          <span className="inline-block w-3 h-3 rounded-full" style={{ background: '#dc3545', opacity: 0.8 }}></span>
           Hotspot urgência
         </span>
         <span className="flex items-center gap-1.5">
-          <span className="inline-block w-3 h-3 rounded-full border-2" style={{ background: '#fff', borderColor: '#682EC7' }}></span>
+          <span className="inline-block w-3 h-3 rounded-full border-2" style={{ background: '#004a80', borderColor: '#fff' }}></span>
           Sede equipe
         </span>
-        <span style={{ color: '#74769A' }}>Clique numa sede pra ver alcance a pé</span>
+        <span style={{ color: 'var(--grey-text)' }}>Clique numa sede pra ver alcance a pé</span>
       </div>
     </div>
   );

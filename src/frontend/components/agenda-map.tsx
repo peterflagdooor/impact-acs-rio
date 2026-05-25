@@ -27,7 +27,7 @@ export function AgendaMap({ agenda }: Props) {
     const map = L.map(containerRef.current);
     mapRef.current = map;
 
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
       attribution: '© OpenStreetMap, © CartoDB',
       maxZoom: 19,
     }).addTo(map);
@@ -39,12 +39,12 @@ export function AgendaMap({ agenda }: Props) {
 
     map.fitBounds(pts, { padding: [30, 30] });
 
-    // Sede — white circle with purple ring
+    // Sede — blue-primary fill + white border
     L.circleMarker([agenda.sede.lat, agenda.sede.lon], {
       radius: 10,
-      color: '#682EC7',
+      color: '#ffffff',
       weight: 3,
-      fillColor: '#ffffff',
+      fillColor: '#004a80',
       fillOpacity: 0.95,
     })
       .addTo(map)
@@ -52,7 +52,7 @@ export function AgendaMap({ agenda }: Props) {
 
     // Linha da rota (tracejada)
     L.polyline(pts, {
-      color: '#682EC7',
+      color: '#004a80',
       weight: 3,
       opacity: 0.55,
       dashArray: '6,8',
@@ -108,7 +108,7 @@ export function AgendaMap({ agenda }: Props) {
     <div
       ref={containerRef}
       className="w-full rounded-2xl overflow-hidden"
-      style={{ height: '420px', border: '1px solid rgba(255,255,255,0.06)' }}
+      style={{ height: '420px', border: '1px solid var(--grey-card)' }}
     />
   );
 }

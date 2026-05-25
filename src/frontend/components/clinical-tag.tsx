@@ -1,13 +1,13 @@
 const TAG_STYLE: Record<string, { bg: string; color: string; emoji: string; label: string }> = {
-  hipertenso: { bg: 'rgba(59,130,246,0.15)',  color: '#93C5FD', emoji: '🫀', label: 'Hipertenso' },
-  diabetico:  { bg: 'rgba(249,115,22,0.15)',  color: '#FCA572', emoji: '🩺', label: 'Diabético' },
-  gestante:   { bg: 'rgba(236,72,153,0.15)',  color: '#F9A8D4', emoji: '🤱', label: 'Gestante' },
-  vulneravel: { bg: 'rgba(234,179,8,0.15)',   color: '#FDE047', emoji: '⚠️', label: 'Vulnerável' },
-  emergencia: { bg: 'rgba(255,77,109,0.15)',  color: '#FF4D6D', emoji: '🚨', label: 'Emergência recente' },
-  idoso:      { bg: 'rgba(167,139,250,0.15)', color: '#C4B5FD', emoji: '👴', label: 'Idoso 66+' },
-  crianca:    { bg: 'rgba(125,226,96,0.15)',  color: '#7DE260', emoji: '👶', label: 'Criança 0-6' },
-  'sem-visita': { bg: 'rgba(255,77,109,0.10)', color: '#FF4D6D', emoji: '⏰', label: 'Sem visita 180d+' },
-  agendamento: { bg: 'rgba(104,46,199,0.15)', color: '#9B6FE8', emoji: '📅', label: 'Agendamento próximo' },
+  hipertenso:   { bg: 'rgba(0,192,244,0.15)',  color: '#0072a3', emoji: '🫀', label: 'Hipertenso' },
+  diabetico:    { bg: 'rgba(253,126,20,0.12)', color: '#8d4a0c', emoji: '🩺', label: 'Diabético' },
+  gestante:     { bg: 'rgba(11,185,117,0.12)', color: '#065f46', emoji: '🤱', label: 'Gestante' },
+  vulneravel:   { bg: 'rgba(255,193,7,0.15)',  color: '#856404', emoji: '⚠️', label: 'Vulnerável' },
+  emergencia:   { bg: 'rgba(220,53,69,0.12)',  color: '#9b1c28', emoji: '🚨', label: 'Emergência recente' },
+  idoso:        { bg: 'rgba(0,74,128,0.10)',   color: '#003660', emoji: '👴', label: 'Idoso 66+' },
+  crianca:      { bg: 'rgba(11,185,117,0.10)', color: '#065f46', emoji: '👶', label: 'Criança 0-6' },
+  'sem-visita': { bg: 'rgba(220,53,69,0.10)', color: '#9b1c28', emoji: '⏰', label: 'Sem visita 180d+' },
+  agendamento:  { bg: 'rgba(0,74,128,0.08)',  color: '#004a80', emoji: '📅', label: 'Agendamento próximo' },
 };
 
 export function ClinicalTag({ kind }: { kind: string }) {
@@ -16,7 +16,7 @@ export function ClinicalTag({ kind }: { kind: string }) {
     return (
       <span
         className="inline-flex items-center px-2.5 py-0.5 text-xs font-medium rounded-full"
-        style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text-muted)' }}
+        style={{ background: 'var(--grey-card)', color: 'var(--grey-text)' }}
       >
         {kind}
       </span>

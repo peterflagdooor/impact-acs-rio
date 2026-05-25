@@ -32,10 +32,10 @@ export default async function AgendaPage({ searchParams }: PageProps) {
     <div className="space-y-6">
       <div>
         <p className="t-section-label">ACS</p>
-        <h1 className="text-3xl font-bold mt-1" style={{ color: 'var(--text)' }}>
+        <h1 className="text-3xl font-bold mt-1" style={{ color: 'var(--grey-dark)' }}>
           Agenda do Dia
         </h1>
-        <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-sm mt-2" style={{ color: 'var(--grey-text)' }}>
           Sequência otimizada de visitas — geográfica + score composto
         </p>
       </div>
@@ -45,7 +45,7 @@ export default async function AgendaPage({ searchParams }: PageProps) {
       {!equipe_id && (
         <div
           className="rounded-2xl p-10 text-center text-sm"
-          style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
+          style={{ background: 'var(--white)', border: '1px solid var(--grey-card)', color: 'var(--grey-text)' }}
         >
           Selecione uma equipe acima para gerar a agenda do dia.
         </div>
@@ -54,7 +54,7 @@ export default async function AgendaPage({ searchParams }: PageProps) {
       {erro && (
         <div
           className="rounded-xl p-4 text-sm"
-          style={{ background: 'rgba(255,77,109,0.12)', color: 'var(--red)', border: '1px solid rgba(255,77,109,0.25)' }}
+          style={{ background: '#fce4e6', color: 'var(--red)', border: '1px solid rgba(220,53,69,0.25)' }}
         >
           Erro: {erro}
         </div>
@@ -67,7 +67,7 @@ export default async function AgendaPage({ searchParams }: PageProps) {
           {agenda.total_itens > 0 && !com_justificativas && (
             <div
               className="rounded-xl p-3 text-sm flex items-center justify-between gap-3"
-              style={{ background: 'var(--bg-card-2)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
+              style={{ background: 'var(--grey-card)', border: '1px solid var(--grey-mid)', color: 'var(--grey-text)' }}
             >
               <span>
                 Justificativas geradas por IA ocultas por padrão para acelerar o carregamento.
@@ -75,7 +75,7 @@ export default async function AgendaPage({ searchParams }: PageProps) {
               <a
                 href={`/agenda?equipe_id=${equipe_id}&capacidade=${capacidade}&com_justificativas=true`}
                 className="font-semibold whitespace-nowrap px-3 py-1.5 rounded-lg text-xs transition-opacity hover:opacity-80"
-                style={{ background: 'var(--purple)', color: '#fff' }}
+                style={{ background: 'var(--blue-primary)', color: '#fff' }}
               >
                 Gerar com IA
               </a>
@@ -85,7 +85,7 @@ export default async function AgendaPage({ searchParams }: PageProps) {
           {agenda.total_itens === 0 ? (
             <div
               className="rounded-2xl p-10 text-center text-sm"
-              style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
+              style={{ background: 'var(--white)', border: '1px solid var(--grey-card)', color: 'var(--grey-text)' }}
             >
               Nenhum paciente prioritário encontrado pra essa equipe.
               <br />
@@ -94,14 +94,14 @@ export default async function AgendaPage({ searchParams }: PageProps) {
           ) : (
             <>
               <section>
-                <h2 className="font-semibold text-base mb-3" style={{ color: 'var(--text)' }}>
+                <h2 className="font-semibold text-base mb-3" style={{ color: 'var(--grey-dark)' }}>
                   Rota
                 </h2>
                 <AgendaMapSection agenda={agenda} />
               </section>
 
               <section>
-                <h2 className="font-semibold text-base mb-3" style={{ color: 'var(--text)' }}>
+                <h2 className="font-semibold text-base mb-3" style={{ color: 'var(--grey-dark)' }}>
                   Sequência de visitas
                 </h2>
                 <div className="space-y-3">

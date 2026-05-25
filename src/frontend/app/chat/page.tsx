@@ -87,10 +87,10 @@ export default function ChatPage() {
       {/* Header */}
       <div className="mb-6">
         <p className="t-section-label">Reunião Semanal</p>
-        <h1 className="text-3xl font-bold mt-1" style={{ color: 'var(--text)' }}>
+        <h1 className="text-3xl font-bold mt-1" style={{ color: 'var(--grey-dark)' }}>
           Chat IA
         </h1>
-        <p className="text-sm mt-2" style={{ color: 'var(--text-muted)' }}>
+        <p className="text-sm mt-2" style={{ color: 'var(--grey-text)' }}>
           Pergunte sobre o território, prioridades, alertas e cobertura.
         </p>
       </div>
@@ -102,14 +102,14 @@ export default function ChatPage() {
             <button
               key={s}
               onClick={() => send(s)}
-              className="text-left p-4 rounded-2xl text-sm transition-all hover:border-purple/40"
+              className="text-left p-4 rounded-2xl text-sm transition-all hover:border-[#004a80]/30"
               style={{
-                background: 'var(--bg-card)',
-                border: '1px solid var(--border-subtle)',
-                color: 'var(--text)',
+                background: 'var(--white)',
+                border: '1px solid var(--grey-card)',
+                color: 'var(--grey-dark)',
               }}
             >
-              <span style={{ color: 'var(--purple-light)', fontWeight: 600 }}>💡</span>{' '}
+              <span style={{ color: 'var(--blue-primary)', fontWeight: 600 }}>💡</span>{' '}
               {s}
             </button>
           ))}
@@ -127,13 +127,13 @@ export default function ChatPage() {
             <div
               className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
               style={{
-                background: m.role === 'user' ? 'var(--purple)' : 'var(--bg-card-2)',
-                border: '1px solid var(--border-subtle)',
+                background: m.role === 'user' ? 'var(--blue-primary)' : 'var(--grey-card)',
+                border: '1px solid var(--grey-card)',
               }}
             >
               {m.role === 'user'
                 ? <User size={14} color="#fff" />
-                : <Bot size={14} style={{ color: 'var(--purple-light)' }} />
+                : <Bot size={14} style={{ color: 'var(--blue-primary)' }} />
               }
             </div>
 
@@ -142,8 +142,8 @@ export default function ChatPage() {
               className="px-4 py-3 rounded-2xl text-sm leading-relaxed"
               style={
                 m.role === 'user'
-                  ? { background: 'var(--purple)', color: '#fff' }
-                  : { background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text)' }
+                  ? { background: 'var(--blue-primary)', color: '#fff' }
+                  : { background: 'var(--white)', border: '1px solid var(--grey-card)', color: 'var(--grey-dark)' }
               }
             >
               <div className="whitespace-pre-wrap">{m.content}</div>
@@ -156,13 +156,13 @@ export default function ChatPage() {
           <div className="flex gap-3 max-w-[88%]">
             <div
               className="w-8 h-8 rounded-xl flex items-center justify-center shrink-0 mt-0.5"
-              style={{ background: 'var(--bg-card-2)', border: '1px solid var(--border-subtle)' }}
+              style={{ background: 'var(--grey-card)', border: '1px solid var(--grey-mid)' }}
             >
-              <Bot size={14} style={{ color: 'var(--purple-light)' }} />
+              <Bot size={14} style={{ color: 'var(--blue-primary)' }} />
             </div>
             <div
               className="px-4 py-3 rounded-2xl text-sm"
-              style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
+              style={{ background: 'var(--white)', border: '1px solid var(--grey-card)', color: 'var(--grey-text)' }}
             >
               <span className="animate-pulse">pensando…</span>
             </div>
@@ -176,7 +176,7 @@ export default function ChatPage() {
       <form
         onSubmit={(e) => { e.preventDefault(); send(input); }}
         className="flex gap-2 p-3 rounded-2xl"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)' }}
+        style={{ background: 'var(--white)', border: '1px solid var(--grey-card)' }}
       >
         <input
           value={input}
@@ -184,13 +184,13 @@ export default function ChatPage() {
           placeholder="Pergunte alguma coisa…"
           disabled={loading}
           className="flex-1 bg-transparent px-2 py-1.5 text-sm focus:outline-none placeholder:opacity-40"
-          style={{ color: 'var(--text)' }}
+          style={{ color: 'var(--grey-dark)' }}
         />
         <button
           type="submit"
           disabled={loading || !input.trim()}
           className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-opacity disabled:opacity-40 hover:opacity-80"
-          style={{ background: 'var(--purple)', color: '#fff' }}
+          style={{ background: 'var(--blue-primary)', color: '#fff' }}
         >
           <Send size={15} />
         </button>

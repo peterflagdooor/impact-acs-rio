@@ -8,20 +8,20 @@ const LABELS: Record<1 | 2 | 3, { titulo: string; descricao: string; accent: str
   1: {
     titulo: 'Crise sem vínculo',
     descricao: '3+ urgências e zero visita do ACS no ano',
-    accent: 'var(--red)',
-    bg: 'rgba(255,77,109,0.10)',
+    accent: 'var(--priority-1)',
+    bg: 'rgba(220,53,69,0.08)',
   },
   2: {
     titulo: 'Alto risco sem contato',
     descricao: 'Gestante, criança, hipertenso, diabético, idoso ou vulnerável sem visita',
-    accent: 'var(--orange)',
-    bg: 'rgba(255,159,10,0.10)',
+    accent: 'var(--priority-2)',
+    bg: 'rgba(253,126,20,0.08)',
   },
   3: {
     titulo: 'Sem contato',
     descricao: 'Sem condição especial, mas zero visita',
-    accent: 'var(--purple-light)',
-    bg: 'rgba(104,46,199,0.10)',
+    accent: 'var(--blue-light)',
+    bg: 'rgba(24,99,220,0.08)',
   },
 };
 
@@ -30,7 +30,7 @@ export function InvisivelCounters({ data }: Props) {
     return (
       <div
         className="rounded-xl p-5 text-sm"
-        style={{ background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', color: 'var(--text-muted)' }}
+        style={{ background: 'var(--white)', border: '1px solid var(--grey-card)', color: 'var(--grey-text)' }}
       >
         Sem invisíveis detectados. Recalcular scores primeiro.
       </div>
@@ -54,10 +54,10 @@ export function InvisivelCounters({ data }: Props) {
             <p className="text-3xl font-bold mt-1.5" style={{ color: meta.accent }}>
               {n.toLocaleString('pt-BR')}
             </p>
-            <p className="text-sm font-semibold mt-2" style={{ color: 'var(--text)' }}>
+            <p className="text-sm font-semibold mt-2" style={{ color: 'var(--grey-dark)' }}>
               {meta.titulo}
             </p>
-            <p className="text-xs mt-1 leading-snug" style={{ color: 'var(--text-muted)' }}>
+            <p className="text-xs mt-1 leading-snug" style={{ color: 'var(--grey-text)' }}>
               {meta.descricao}
             </p>
           </div>
